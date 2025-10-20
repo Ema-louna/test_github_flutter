@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
+
+
+
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox<String>('carsBox');
+
   runApp(const MyApp());
 }
 
@@ -37,13 +45,19 @@ class _MyHomePageState extends State<MyHomePage> {
   List<String> get carList => ['Dodge Ram', 'Toyota Corolla', 'Honda CRV', 'GMC Sierra'];
   final TextEditingController _textController = TextEditingController();
   final List<String> _cars = [];
+  late final Box<String> carsBox = Hive.box<String>('carsBox');
+  List<String> get _car => carsBox.values.toList();
+
 
 
   void _addCar(){
     setState(() {
       if(_textController.text.isNotEmpty){
-        _cars.add(_textController.text);
+        carsBox.add(_textController.text);
         _textController.clear();
+        setState(() {
+
+        });//refresh the UI
       }
     });
   }
@@ -82,21 +96,30 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
 
 
-        Expanded(child: ListView.builder(
-          itemCount: carList.length,
+
+        Expanded(child: ValueListenableBuilder(valueListenable: carsBox.listenable(),
+            builder: (context, Box<String> box, _){
+          final cars = box.values.toList();
+
+        return ListView.builder(
+          itemCount: cars.length,
             itemBuilder: (context, index){
           return ListTile(
-            title: Text(carList[index]),
+            title: Text(cars[index]),
             onTap: (){
               //placeholder for showing the details
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Selected: ${carList[index]}')),
-
+                SnackBar(content: Text('Selected: ${cars[index]}')),
               );
-            },
-          );
-        })
-      ),],
+                  },
+              );
+              },
+              );
+        }
+              ),
+              ),
+              ],
+
     ),
     ),
 
