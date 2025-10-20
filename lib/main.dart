@@ -34,8 +34,19 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
-  List <String> carList = ['Dodge Ram', 'Toyota Corolla', 'Honda CRV', 'GMC Sierra'];
+  List<String> get carList => ['Dodge Ram', 'Toyota Corolla', 'Honda CRV', 'GMC Sierra'];
+  final TextEditingController _textController = TextEditingController();
+  final List<String> _cars = [];
 
+
+  void _addCar(){
+    setState(() {
+      if(_textController.text.isNotEmpty){
+        _cars.add(_textController.text);
+        _textController.clear();
+      }
+    });
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -54,9 +65,24 @@ class _MyHomePageState extends State<MyHomePage> {
 
         title: Text(widget.title),
       ),
-      body: Center(
+      body: Padding( padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _textController,
+              decoration: InputDecoration(
+                labelText: 'Enter car name/model',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
 
-        child: ListView.builder(
+            ElevatedButton(onPressed: _addCar,
+                child: const Text('Add Car'),
+            ),
+
+
+        Expanded(child: ListView.builder(
           itemCount: carList.length,
             itemBuilder: (context, index){
           return ListTile(
@@ -65,11 +91,19 @@ class _MyHomePageState extends State<MyHomePage> {
               //placeholder for showing the details
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Selected: ${carList[index]}')),
+
               );
             },
           );
         })
-      ),
+      ),],
+    ),
+    ),
+
+
+
+
+
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
         tooltip: 'Increment',
