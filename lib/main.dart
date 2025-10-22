@@ -51,6 +51,13 @@ class _MyHomePageState extends State<MyHomePage> {
       widget.carsBox.add(newCar); // store as a new car
       _textController.clear();
       setState(() {});
+      // SHOW SNACKBAR
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Car added: ${newCar['name']}'),
+              duration: Duration(seconds: 3),
+          ),
+      );
     }
   }
 
@@ -72,6 +79,31 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        actions: [
+          IconButton(
+      icon: Icon(Icons.info_outline),
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: Text('Instructions'),
+              content: Text(
+                  'To add a car, type the name and press "Add Car".\n'
+                      'Select a car to view, update, or delete it.\n'
+                      'On a large screen, details appear beside the list.'
+              ),
+
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Ok'),
+            )
+          ],
+            ),
+            );
+                },
+            ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -107,15 +139,20 @@ class _MyHomePageState extends State<MyHomePage> {
                               title: Text(car['name']),
                               selected: _selectedIndex == index,
                               onTap: () {
+                                final car = _getCar(widget.carsBox.getAt(index));
                                 final isWideScreen = MediaQuery.of(context).size.width >= 600;
+
                                 if (isWideScreen) {
-                                  // Wide screen: just update the selected index to rebuild the right panel
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Selected car: ${car['name']}'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
                                   setState(() {
                                     _selectedIndex = index;
                                   });
                                 } else {
-                                  // Small screen: push the detail page
-                                  final car = _getCar(widget.carsBox.getAt(index));
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -124,7 +161,15 @@ class _MyHomePageState extends State<MyHomePage> {
                                         carData: car,
                                       ),
                                     ),
-                                  ).then((_) => setState(() {}));
+                                  ).then((_) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Selected car: ${car['name']}'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                    setState(() {});
+                                  });
                                 }
 
                               },
