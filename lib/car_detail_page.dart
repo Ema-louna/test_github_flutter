@@ -5,12 +5,17 @@ class CarDetailPage extends StatefulWidget {
   final int index;
   final Map carData;
   final bool fullScreen;
+  final Future<void> Function()? onSave;
+
+
+
 
   const CarDetailPage({
     super.key,
     required this.index,
     required this.carData,
     this.fullScreen = true,
+    this.onSave,
   });
 
   @override
@@ -38,6 +43,30 @@ class _CarDetailPageState extends State<CarDetailPage> {
     _colorController = TextEditingController(text: widget.carData['color']);
     _descriptionController =
         TextEditingController(text: widget.carData['description']);
+    // Add listeners to automatically save every change
+    _nameController.addListener(_autoSave);
+    _modelController.addListener(_autoSave);
+    _yearController.addListener(_autoSave);
+    _colorController.addListener(_autoSave);
+    _descriptionController.addListener(_autoSave);
+
+  }
+
+  void _autoSave() async {
+    final updatedCar = {
+      'name': _nameController.text,
+      'model': _modelController.text,
+      'year': _yearController.text,
+      'color': _colorController.text,
+      'description': _descriptionController.text,
+    };
+
+    carsBox.putAt(widget.index, updatedCar);
+
+    // Save to encrypted storage if callback exists
+    if (widget.onSave != null) {
+      await widget.onSave!();
+    }
   }
 
   @override
@@ -54,7 +83,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
 
 
 
-  void _updateCar() {
+  void _updateCar() async{
     final updatedCar = {
       'name': _nameController.text,
       'model': _modelController.text,
@@ -65,6 +94,10 @@ class _CarDetailPageState extends State<CarDetailPage> {
     };
 
     carsBox.putAt(widget.index, updatedCar);
+    if (widget.onSave != null){
+      await widget.onSave!();
+
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Car updated: ${_nameController.text}')),
@@ -72,28 +105,27 @@ class _CarDetailPageState extends State<CarDetailPage> {
 
     if (widget.fullScreen) {
       Navigator.pop(context);
-    } else {
-      setState(() {});
     }
   }
 
   void _deleteCar() async {
     bool? confirm = await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Delete'),
-        content: const Text('Are you sure to delete this car?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder: (context) =>
+          AlertDialog(
+            title: const Text('Confirm Delete'),
+            content: const Text('Are you sure to delete this car?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -104,8 +136,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
 
       if (widget.fullScreen) {
         Navigator.pop(context);
-      } else {
-        setState(() {});
       }
     }
   }
