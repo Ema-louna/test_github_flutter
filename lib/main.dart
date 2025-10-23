@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'car_detail_page.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
-  var carsBox = await Hive.openBox('carsBox');
-  runApp(MyApp(carsBox: carsBox));
+  final carsBox = await Hive.openBox('carsBox');
+
+  runApp(MyApp(carsBox: Hive.box('carsBox')));
 }
 class MyApp extends StatelessWidget {
   final Box carsBox;
@@ -37,6 +40,36 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _textController = TextEditingController();
   int? _selectedIndex;
   Box get carsBox => Hive.box('carsBox');
+final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+
+
+
+  @override
+void initState() {
+    super.initState();
+    _loadSavedText();
+    _textController.addListener(() {
+      _saveTextSecurely(_textController.text);
+    });
+  }
+
+  // Load saved text from secure storage
+  Future<void> _loadSavedText() async {
+    String? savedText = await _secureStorage.read(key: 'lastCarText');
+    if (savedText != null) {
+      setState(() {
+        _textController.text = savedText;
+      });
+    }
+  }
+
+  //Save typed text securely
+  Future<void> _saveTextSecurely(String text) async {
+    await _secureStorage.write(key: 'lastCarText', value: text);
+  }
+
+
 
   void _addCar() {
     if (_textController.text.isNotEmpty) {
@@ -48,8 +81,9 @@ class _MyHomePageState extends State<MyHomePage> {
         'description': 'No details added yet',
       };
 
-      widget.carsBox.add(newCar); // store as a new car
-      _textController.clear();
+      carsBox.add(newCar); // store as a new car in Hive
+    _secureStorage.delete(key:'lastCarText');
+
       setState(() {});
       // SHOW SNACKBAR
       ScaffoldMessenger.of(context).showSnackBar(
@@ -128,7 +162,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   Expanded(
                     flex: 2,
                     child: ValueListenableBuilder(
-                      valueListenable: widget.carsBox.listenable(),
+                      valueListenable: carsBox.listenable(),
                       builder: (context, Box box, _) {
                         final cars = box.values.toList();
                         return ListView.builder(
@@ -183,14 +217,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   // Right side: detail panel (only on wide screens)
                   if (_selectedIndex != null && MediaQuery.of(context).size.width >= 600)
                     Expanded(
-                      flex: 3,
                       child: CarDetailPage(
-                        key: ValueKey(_selectedIndex),
+                        key: ValueKey(_selectedIndex), // use index key only
                         index: _selectedIndex!,
                         carData: _getCar(widget.carsBox.getAt(_selectedIndex!)),
                         fullScreen: false,
                       ),
-
                     ),
                 ],
               ),
