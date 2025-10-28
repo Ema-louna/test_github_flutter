@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'car_detail_page.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
+import 'package:test_github_flutter/l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart';
 
 
 void main() async {
@@ -19,11 +24,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: MyHomePage(title: 'Cars for sale page', carsBox: carsBox),
+      home: MyHomePage(carsBox: carsBox),
     );
   }
 }
@@ -113,7 +120,7 @@ void initState() {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: Text(AppLocalizations.of(context)!.appTitle),
         actions: [
           IconButton(
       icon: Icon(Icons.info_outline),
@@ -121,17 +128,14 @@ void initState() {
           showDialog(
             context: context,
             builder: (_) => AlertDialog(
-              title: Text('Instructions'),
+              title: Text(AppLocalizations.of(context)!.instructionsTitle),
               content: Text(
-                  'To add a car, type the name and press "Add Car".\n'
-                      'Select a car to view, update, or delete it.\n'
-                      'On a large screen, details appear beside the list.'
-              ),
+                AppLocalizations.of(context)!.instructionsText),
 
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Ok'),
+              child: Text(AppLocalizations.of(context)!.ok),
             )
           ],
             ),
@@ -146,15 +150,15 @@ void initState() {
           children: [
             TextField(
               controller: _textController,
-              decoration: const InputDecoration(
-                labelText: 'Enter car name/model',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.enterCarName,
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: _addCar,
-              child: const Text('Add Car'),
+              child: Text(AppLocalizations.of(context)!.addCar),
             ),
             const SizedBox(height: 10),
             Expanded(
