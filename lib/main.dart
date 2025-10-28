@@ -1,36 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'car_detail_page.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-
 import 'package:test_github_flutter/l10n/app_localizations.dart';
-import 'l10n/app_localizations.dart';
+
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
-  final carsBox = await Hive.openBox('carsBox');
+  await Hive.openBox('carsBox');
 
-  runApp(MyApp(carsBox: Hive.box('carsBox')));
+  runApp(MyApp());
 }
-class MyApp extends StatelessWidget {
-  final Box carsBox;
-  const MyApp({super.key, required this.carsBox});
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+
+class _MyAppState extends State<MyApp> {
+  Locale? _locale;
+  void _setLocale(Locale locale){
+    setState(() {
+      _locale = locale;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Cars for Sale page',
       debugShowCheckedModeBanner: false,
+      locale: _locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: MyHomePage(carsBox: carsBox),
+      home: MyHomePage(
+        title: 'Cars for Sale page',
+
+        carsBox: Hive.box('carsBox'),
+        onLocaleChange: _setLocale,
+      ),
     );
   }
 }
@@ -38,7 +55,9 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   final String title;
   final Box carsBox;
-  const MyHomePage({super.key, required this.title, required this.carsBox});
+  final Function(Locale) onLocaleChange;
+
+  const MyHomePage({super.key, required this.title, required this.carsBox, required this.onLocaleChange });
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -142,8 +161,27 @@ void initState() {
             );
                 },
             ),
+
+        // Language en/fr button
+        PopupMenuButton<Locale>(
+          icon: Icon(Icons.language),
+          onSelected: (Locale locale) {
+            widget.onLocaleChange(locale);
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: Locale('en'),
+              child: Text('English'),
+            ),
+            PopupMenuItem(
+              value: Locale('fr'),
+              child: Text('Français'),
+            ),
+          ],
+        ),
         ],
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
