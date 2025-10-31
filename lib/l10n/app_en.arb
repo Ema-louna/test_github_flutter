@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "appTitle": "Cars for Sale",
+  "addCar": "Add Car",
+  "enterCarName": "Enter car name/model",
+  "instructionsTitle": "Instructions",
+  "instructionsText": "To add a car, type the name and press \"Add Car\". Select a car to view, update, or delete it. On a large screen, details appear beside the list.",
+  "ok": "Ok"
+}
