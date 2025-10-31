@@ -1,278 +1,122 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'car_detail_page.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:test_github_flutter/l10n/app_localizations.dart';
 
-
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
-  await Hive.openBox('carsBox');
-
-  runApp(MyApp());
+void main() {
+  runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-
-class _MyAppState extends State<MyApp> {
-  Locale? _locale;
-  void _setLocale(Locale locale){
-    setState(() {
-      _locale = locale;
-    });
-  }
-
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Cars for Sale page',
-      debugShowCheckedModeBanner: false,
-      locale: _locale,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+      title: 'Flutter Demo',
       theme: ThemeData(
+        // This is the theme of your application.
+        //
+        // TRY THIS: Try running your application with "flutter run". You'll see
+        // the application has a purple toolbar. Then, without quitting the app,
+        // try changing the seedColor in the colorScheme below to Colors.green
+        // and then invoke "hot reload" (save your changes or press the "hot
+        // reload" button in a Flutter-supported IDE, or press "r" if you used
+        // the command line to start the app).
+        //
+        // Notice that the counter didn't reset back to zero; the application
+        // state is not lost during the reload. To reset the state, use hot
+        // restart instead.
+        //
+        // This works for code too, not just values: Most code changes can be
+        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: MyHomePage(
-        title: 'Cars for Sale page',
-
-        carsBox: Hive.box('carsBox'),
-        onLocaleChange: _setLocale,
-      ),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  final String title;
-  final Box carsBox;
-  final Function(Locale) onLocaleChange;
+  const MyHomePage({super.key, required this.title});
 
-  const MyHomePage({super.key, required this.title, required this.carsBox, required this.onLocaleChange });
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
+  final String title;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final TextEditingController _textController = TextEditingController();
-  int? _selectedIndex;
-  Box get carsBox => Hive.box('carsBox');
-final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  int _counter = 0;
 
-
-
-
-  @override
-void initState() {
-    super.initState();
-    _loadSavedText();
-    _textController.addListener(() {
-      _saveTextSecurely(_textController.text);
+  void _incrementCounter() {
+    setState(() {
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter++;
     });
-  }
-
-  // Load saved text from secure storage
-  Future<void> _loadSavedText() async {
-    String? savedText = await _secureStorage.read(key: 'lastCarText');
-    if (savedText != null) {
-      setState(() {
-        _textController.text = savedText;
-      });
-    }
-  }
-
-  //Save typed text securely
-  Future<void> _saveTextSecurely(String text) async {
-    await _secureStorage.write(key: 'lastCarText', value: text);
-  }
-
-
-
-  void _addCar() {
-    if (_textController.text.isNotEmpty) {
-      final newCar = {
-        'name': _textController.text,
-        'model': 'Unknown',
-        'year': '2025',
-        'color': 'N/A',
-        'description': 'No details added yet',
-      };
-
-      carsBox.add(newCar); // store as a new car in Hive
-    _secureStorage.delete(key:'lastCarText');
-
-      setState(() {});
-      // SHOW SNACKBAR
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Car added: ${newCar['name']}'),
-              duration: Duration(seconds: 3),
-          ),
-      );
-    }
-  }
-
-  Map _getCar(dynamic carRaw) {
-    if (carRaw is Map) return carRaw;
-    // convert old Strings or any other type to Map
-    return {
-      'name': carRaw.toString(),
-      'model': 'Unknown',
-      'year': '2025',
-      'color': 'N/A',
-      'description': 'No details added yet',
-    };
   }
 
   @override
   Widget build(BuildContext context) {
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
+        // TRY THIS: Try changing the color here to a specific color (to
+        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
+        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(AppLocalizations.of(context)!.appTitle),
-        actions: [
-          IconButton(
-      icon: Icon(Icons.info_outline),
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: Text(AppLocalizations.of(context)!.instructionsTitle),
-              content: Text(
-                AppLocalizations.of(context)!.instructionsText),
-
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(AppLocalizations.of(context)!.ok),
-            )
-          ],
-            ),
-            );
-                },
-            ),
-
-        // Language en/fr button
-        PopupMenuButton<Locale>(
-          icon: Icon(Icons.language),
-          onSelected: (Locale locale) {
-            widget.onLocaleChange(locale);
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: Locale('en'),
-              child: Text('English'),
-            ),
-            PopupMenuItem(
-              value: Locale('fr'),
-              child: Text('Français'),
-            ),
-          ],
-        ),
-        ],
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title: Text(widget.title),
       ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Center(
+        // Center is a layout widget. It takes a single child and positions it
+        // in the middle of the parent.
         child: Column(
-          children: [
-            TextField(
-              controller: _textController,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.enterCarName,
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _addCar,
-              child: Text(AppLocalizations.of(context)!.addCar),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: ValueListenableBuilder(
-                      valueListenable: carsBox.listenable(),
-                      builder: (context, Box box, _) {
-                        final cars = box.values.toList();
-                        return ListView.builder(
-                          itemCount: cars.length,
-                          itemBuilder: (context, index) {
-                            final car = _getCar(cars[index]);
-                            return ListTile(
-                              title: Text(car['name']),
-                              selected: _selectedIndex == index,
-                              onTap: () {
-                                final car = _getCar(widget.carsBox.getAt(index));
-                                final isWideScreen = MediaQuery.of(context).size.width >= 600;
-
-                                if (isWideScreen) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Selected car: ${car['name']}'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                  setState(() {
-                                    _selectedIndex = index;
-                                  });
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => CarDetailPage(
-                                        index: index,
-                                        carData: car,
-                                      ),
-                                    ),
-                                  ).then((_) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Selected car: ${car['name']}'),
-                                        duration: Duration(seconds: 2),
-                                      ),
-                                    );
-                                    setState(() {});
-                                  });
-                                }
-
-                              },
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-
-                  // Right side: detail panel (only on wide screens)
-                  if (_selectedIndex != null && MediaQuery.of(context).size.width >= 600)
-                    Expanded(
-                      child: CarDetailPage(
-                        key: ValueKey(_selectedIndex), // use index key only
-                        index: _selectedIndex!,
-                        carData: _getCar(widget.carsBox.getAt(_selectedIndex!)),
-                        fullScreen: false,
-                      ),
-                    ),
-                ],
-              ),
+          // Column is also a layout widget. It takes a list of children and
+          // arranges them vertically. By default, it sizes itself to fit its
+          // children horizontally, and tries to be as tall as its parent.
+          //
+          // Column has various properties to control how it sizes itself and
+          // how it positions its children. Here we use mainAxisAlignment to
+          // center the children vertically; the main axis here is the vertical
+          // axis because Columns are vertical (the cross axis would be
+          // horizontal).
+          //
+          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
+          // action in the IDE, or press "p" in the console), to see the
+          // wireframe for each widget.
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text('You have pushed the button this many times:'),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
