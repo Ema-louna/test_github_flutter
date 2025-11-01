@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'car_main.dart'; // <-- your existing CarsHomePage or CarsMain
+import 'car_main.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
@@ -12,12 +12,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Main Demo',
+      title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true, // Optional: matches modern Material look
       ),
       home: const MyHomePage(title: 'Main Page'),
-      localizationsDelegates:  [
+      localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -37,7 +38,10 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -46,14 +50,11 @@ class MyHomePage extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const CarsMain()),
-
+                  MaterialPageRoute(builder: (context) => const CarsMain()),
                 );
               },
               child: const Text('Cars'),
             ),
-
             const SizedBox(height: 10),
             ElevatedButton(onPressed: () {}, child: const Text('Boat')),
             const SizedBox(height: 10),

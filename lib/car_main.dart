@@ -3,7 +3,6 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class CarsMain extends StatefulWidget {
   const CarsMain({super.key});
 
@@ -62,9 +61,11 @@ class _CarsMainState extends State<CarsMain> {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width >= 600;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cars'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -89,9 +90,21 @@ class _CarsMainState extends State<CarsMain> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(controller: _controller, decoration: const InputDecoration(labelText: 'Car name')),
+            TextField(
+              controller: _controller,
+              decoration: const InputDecoration(
+                labelText: 'Car name',
+                border: OutlineInputBorder(),
+              ),
+            ),
             const SizedBox(height: 10),
-            ElevatedButton(onPressed: () => _addCar(_controller.text), child: const Text('Add Car')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.onPrimary,
+              ),
+              onPressed: () => _addCar(_controller.text),
+              child: const Text('Add Car'),
+            ),
             const SizedBox(height: 10),
             Expanded(
               child: Row(
@@ -103,18 +116,28 @@ class _CarsMainState extends State<CarsMain> {
                       itemBuilder: (context, index) {
                         final car = _cars[index];
                         return ListTile(
-                          title: Text(car['name']),
+                          title: Text(
+                            car['name'],
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
                           onTap: () {
                             if (isWide) {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Selected: ${car['name']}')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text('Selected: ${car['name']}')),
+                              );
                             } else {
                               showDialog(
                                 context: context,
                                 builder: (_) => AlertDialog(
                                   title: Text(car['name']),
-                                  content: Text('Details about ${car['name']}'),
+                                  content:
+                                  Text('Details about ${car['name']}'),
                                   actions: [
-                                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context),
+                                        child: const Text('Close'))
                                   ],
                                 ),
                               );
@@ -128,9 +151,14 @@ class _CarsMainState extends State<CarsMain> {
                     Expanded(
                       child: Container(
                         color: Colors.grey[200],
-                        child: Center(child: Text('Select a car to see details')),
+                        child: Center(
+                          child: Text(
+                            'Select a car to see details',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ),
                       ),
-                    )
+                    ),
                 ],
               ),
             )
