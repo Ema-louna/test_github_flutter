@@ -12,12 +12,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  floor: ^1.4.2
   sqflite: ^2.2.8+1
   path_provider: ^2.0.15
   shared_preferences: ^2.1.1
   flutter_localizations:
     sdk: flutter
-  sqflite_common_ffi_web: ^1.0.1+2
+  sqflite_common_ffi_web: ^0.4.5+4
 
 
 
@@ -25,6 +26,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  floor_generator: ^1.4.2
+  build_runner: ^2.1.11
 
 
 
