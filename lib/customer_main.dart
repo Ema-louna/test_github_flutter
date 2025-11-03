@@ -5,6 +5,7 @@ import 'package:sqflite/sqflite.dart' as sqflite;
 import 'customer.dart';
 import 'customer_dao.dart';
 import 'database.dart';
+import 'customer_detail_page.dart';
 
 class CustomerMain extends StatefulWidget {
   const CustomerMain({super.key});
@@ -24,6 +25,7 @@ class _CustomerMainState extends State<CustomerMain> {
   AppDatabase? _database;
   CustomerDao? _customerDao;
   bool _isLoading = true;
+  int? _selectedIndex;
 
   @override
   void initState() {
@@ -137,7 +139,9 @@ class _CustomerMainState extends State<CustomerMain> {
 
   @override
   Widget build(BuildContext context) {
-    // Show loading while database initializes
+    // Check if screen is wide (tablet/desktop)
+    final isWide = MediaQuery.of(context).size.width >= 600;
+
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
@@ -166,6 +170,7 @@ class _CustomerMainState extends State<CustomerMain> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Input fields (same as before)
             TextField(
               controller: _firstNameController,
               decoration: const InputDecoration(
@@ -219,59 +224,116 @@ class _CustomerMainState extends State<CustomerMain> {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 10),
+
+            // RESPONSIVE LAYOUT: Row for tablet, Column for phone
             Expanded(
-              child: _customers.isEmpty
-                  ? const Center(
-                child: Text(
-                  'No customers yet. Add one to get started!',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-              )
-                  : ListView.builder(
-                itemCount: _customers.length,
-                itemBuilder: (context, index) {
-                  final customer = _customers[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: ListTile(
-                      title: Text(
-                        '${customer.firstName} ${customer.lastName}',
-                        style: Theme.of(context).textTheme.bodyLarge,
+              child: Row(
+                children: [
+                  // LEFT SIDE: ListView (always shown)
+                  Expanded(
+                    flex: 2,
+                    child: _customers.isEmpty
+                        ? const Center(
+                      child: Text(
+                        'No customers yet. Add one to get started!',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
-                      subtitle: Text(customer.address),
-                      trailing: Text('ID: ${customer.id}'),
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: Text('${customer.firstName} ${customer.lastName}'),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('ID: ${customer.id}'),
-                                const SizedBox(height: 8),
-                                Text('Address: ${customer.address}'),
-                                Text('DOB: ${customer.dateOfBirth}'),
-                                Text('License: ${customer.driverLicense}'),
-                              ],
+                    )
+                        : ListView.builder(
+                      itemCount: _customers.length,
+                      itemBuilder: (context, index) {
+                        final customer = _customers[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          child: ListTile(
+                            title: Text(
+                              '${customer.firstName} ${customer.lastName}',
+                              style: Theme.of(context).textTheme.bodyLarge,
                             ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Close'),
-                              )
-                            ],
+                            subtitle: Text(customer.address),
+                            selected: _selectedIndex == index,
+                            onTap: () {
+                              if (isWide) {
+                                // TABLET: Show details in side panel
+                                setState(() => _selectedIndex = index);
+                              } else {
+                                // PHONE: Navigate to full-screen detail page
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CustomerDetailPage(
+                                      customer: customer,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
                           ),
                         );
                       },
                     ),
-                  );
-                },
+                  ),
+
+                  // RIGHT SIDE: Detail panel (only on wide screens)
+                  if (isWide && _selectedIndex != null)
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        color: Colors.grey[200],
+                        padding: const EdgeInsets.all(16),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Customer Details',
+                                style: Theme.of(context).textTheme.headlineSmall,
+                              ),
+                              const SizedBox(height: 20),
+                              _buildDetailRow('ID', '${_customers[_selectedIndex!].id}'),
+                              _buildDetailRow('First Name', _customers[_selectedIndex!].firstName),
+                              _buildDetailRow('Last Name', _customers[_selectedIndex!].lastName),
+                              _buildDetailRow('Address', _customers[_selectedIndex!].address),
+                              _buildDetailRow('Date of Birth', _customers[_selectedIndex!].dateOfBirth),
+                              _buildDetailRow('Driver License', _customers[_selectedIndex!].driverLicense),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+// Helper method to build detail rows
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
