@@ -158,6 +158,14 @@ class _CarsMainState extends State<CarsMain> {
                           ),
                           onTap: () {
 
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('You selected: ${car['name']}'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+
+
                             if (isWide){
                               setState(() {
                                 _selectedIndex = index;
