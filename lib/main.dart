@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'car_main.dart';
 import 'customer_main.dart';
+import 'boat_main.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 
@@ -59,7 +60,15 @@ class MyHomePage extends StatelessWidget {
               child: const Text('Cars'),
             ),
             const SizedBox(height: 10),
-            ElevatedButton(onPressed: () {}, child: const Text('Boat')),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const BoatMain()),
+                );
+              },
+              child: const Text('Boat'),
+            ),
             const SizedBox(height: 10),
             ElevatedButton(onPressed: () {}, child: const Text('Purchase')),
             const SizedBox(height: 10),
