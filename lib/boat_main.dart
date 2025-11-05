@@ -8,82 +8,97 @@ class BoatMain extends StatefulWidget {
 }
 
 class _BoatMainState extends State<BoatMain> {
-  // List that holds items inserted by the user
-  final List<String> words = <String>[];
+  // list that stores user-inserted boats
+  final List<String> boats = [];
 
-  // TextField controller
+  // text controller for input field
   final TextEditingController _controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Boats for Sale')),
-      // per course notes: put the whole list area in a separate function
-      body: ListPage(),
+      body: ListPage(), // all list-related code in one function (per course guide)
     );
   }
 
-  /// Using functions to create components (as in the course material)
-  /// Returns: Column( Row(Add + TextField), Expanded(ListView.builder) )
+  // ----------------- ListPage() -----------------
   Widget ListPage() {
     return Column(
       children: [
-        // Row with Add button and TextField
+        // Row with Add button + TextField
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               ElevatedButton(
-                child: const Text("Add item"),
                 onPressed: () {
+                  final text = _controller.text.trim();
+                  if (text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please enter a boat name!')),
+                    );
+                    return;
+                  }
                   setState(() {
-                    // add current text to the list
-                    final text = _controller.value.text.trim();
-                    if (text.isNotEmpty) {
-                      words.add(text);
-                      _controller.text = "";
-                    }
+                    boats.add(text);
+                    _controller.clear();
                   });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Boat added! Total: ${boats.length}')),
+                  );
                 },
+                child: const Text('Add Boat'),
               ),
-              // NOTE: param is `controller` (course snippet said inputController)
+              const SizedBox(width: 10),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Enter boat text',
-                      border: OutlineInputBorder(),
-                    ),
+                child: TextField(
+                  controller: _controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Enter Boat Name',
+                    border: OutlineInputBorder(),
                   ),
+                  onSubmitted: (_) {
+                    final text = _controller.text.trim();
+                    if (text.isEmpty) return;
+                    setState(() {
+                      boats.add(text);
+                      _controller.clear();
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Boat added! Total: ${boats.length}')),
+                    );
+                  },
                 ),
               ),
             ],
           ),
         ),
 
-        // Expanded so ListView has bounded height inside Column
+        // Expanded ListView builder
         Expanded(
           child: ListView.builder(
-            itemCount: words.length, // number of rows
-            itemBuilder: (context, rowNum) {
-              // A row: delete on tap (GestureDetector)
+            itemCount: boats.length,
+            itemBuilder: (context, index) {
+              final boat = boats[index];
               return GestureDetector(
                 onTap: () {
                   setState(() {
-                    words.removeAt(rowNum);
+                    boats.removeAt(index);
                   });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Removed "$boat"')),
+                  );
                 },
                 child: Padding(
                   padding:
                   const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Row number: $rowNum"),
-                      Text(words[rowNum]),
+                      Text('Row ${index + 1}'),
+                      Text(boat),
                     ],
                   ),
                 ),
