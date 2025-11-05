@@ -7,6 +7,7 @@ import 'boat_item.dart';
 import 'boat_item_dao.dart';
 import 'app_database.dart';
 import 'boat_detail_page.dart';
+import 'boat_lastentryprefs.dart';
 
 class BoatMain extends StatefulWidget {
   const BoatMain({super.key});
@@ -23,7 +24,6 @@ class _BoatMainState extends State<BoatMain> {
   final TextEditingController _controller = TextEditingController();
   bool _loading = true;
 
-  // for wide screens (side detail panel)
   int? _selectedIndex;
 
   @override
@@ -40,12 +40,42 @@ class _BoatMainState extends State<BoatMain> {
       _db = await buildDb();
       _dao = _db!.boatItemDao;
 
-      final items = await _dao!.findAll();
+      final List<BoatItem> items = await _dao!.findAll();
+      final String? last = await BoatLastEntryPrefs.loadLastBoatName();
+
       if (!mounted) return;
       setState(() {
         boats = items;
         _loading = false;
       });
+
+      if (last != null && last.isNotEmpty && mounted) {
+        final bool ok = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Prefill last entry?'),
+            content: Text('Use the last typed boat name:\n\n"$last"'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('No'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Yes'),
+              ),
+            ],
+          ),
+        ) ??
+            false;
+
+        if (ok && mounted) {
+          _controller.text = last;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Prefilled last boat name')),
+          );
+        }
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -55,7 +85,7 @@ class _BoatMainState extends State<BoatMain> {
   }
 
   Future<void> _addBoat() async {
-    final text = _controller.text.trim();
+    final String text = _controller.text.trim();
     if (text.isEmpty) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Please enter a boat name!')));
@@ -66,10 +96,13 @@ class _BoatMainState extends State<BoatMain> {
           .showSnackBar(const SnackBar(content: Text('Database not ready yet!')));
       return;
     }
+
+    await BoatLastEntryPrefs.saveLastBoatName(text);
+
     await _dao!.insertItem(BoatItem(name: text));
     _controller.clear();
 
-    final items = await _dao!.findAll();
+    final List<BoatItem> items = await _dao!.findAll();
     if (!mounted) return;
     setState(() {
       boats = items;
@@ -78,24 +111,30 @@ class _BoatMainState extends State<BoatMain> {
       }
     });
 
-    //  Snackbar after add
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text('Boat added! Total: ${boats.length}')));
   }
 
   Future<void> _deleteBoatWithConfirm(int index) async {
-    final item = boats[index];
-    final ok = await showDialog<bool>(
+    final BoatItem item = boats[index];
+    final bool ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Delete boat?'),
         content: Text('This will remove "${item.name}".'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
-    ) ?? false;
+    ) ??
+        false;
 
     if (!ok) return;
 
@@ -103,7 +142,7 @@ class _BoatMainState extends State<BoatMain> {
     if (item.id != null) {
       await _dao!.deleteById(item.id!);
     }
-    final items = await _dao!.findAll();
+    final List<BoatItem> items = await _dao!.findAll();
     if (!mounted) return;
     setState(() {
       boats = items;
@@ -114,14 +153,13 @@ class _BoatMainState extends State<BoatMain> {
       }
     });
 
-    //  Snackbar after delete
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text('Deleted "${item.name}"')));
   }
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width >= 600;
+    final bool isWide = MediaQuery.of(context).size.width >= 600;
 
     if (_loading) {
       return Scaffold(
@@ -129,7 +167,11 @@ class _BoatMainState extends State<BoatMain> {
         body: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [CircularProgressIndicator(), SizedBox(height: 10), Text('Loading Database...')],
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 10),
+              Text('Loading Database...'),
+            ],
           ),
         ),
       );
@@ -143,15 +185,15 @@ class _BoatMainState extends State<BoatMain> {
             tooltip: 'Help',
             icon: const Icon(Icons.help_outline),
             onPressed: () {
-              //  AlertDialog on demand (Help)
               showDialog(
                 context: context,
                 builder: (_) => const AlertDialog(
                   title: Text('How to use'),
                   content: Text(
-                      'Type a boat name then press "Add Boat" to insert it.\n\n'
-                          'Tap an item to view details (phone = full screen; tablet/desktop = side panel).\n'
-                          'Use the trash icon to delete (confirmation shown).'),
+                    'Type a boat name then press "Add Boat" to insert it.\n\n'
+                        'Tap an item to view details (phone = full screen; tablet/desktop = side panel).\n'
+                        'Your last typed boat name can be remembered for next time.',
+                  ),
                 ),
               );
             },
@@ -162,23 +204,25 @@ class _BoatMainState extends State<BoatMain> {
     );
   }
 
-  // PHONE: column with form + list; tap navigates to full-screen detail
   Widget _narrowBody() {
     return Column(
       children: [
         _topForm(),
-        Expanded(child: _listBuilder(onTap: (i) {
-          final b = boats[i];
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => BoatDetailPage(boat: b)),
-          );
-        })),
+        Expanded(
+          child: _listBuilder(
+            onTap: (int i) {
+              final BoatItem b = boats[i];
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => BoatDetailPage(boat: b)),
+              );
+            },
+          ),
+        ),
       ],
     );
   }
 
-  // TABLET/DESKTOP: row with list on left and detail panel on right
   Widget _wideBody() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -192,7 +236,7 @@ class _BoatMainState extends State<BoatMain> {
                 Expanded(
                   child: _listBuilder(
                     selectedIndex: _selectedIndex,
-                    onTap: (i) => setState(() => _selectedIndex = i),
+                    onTap: (int i) => setState(() => _selectedIndex = i),
                   ),
                 ),
               ],
@@ -213,7 +257,6 @@ class _BoatMainState extends State<BoatMain> {
     );
   }
 
-  // top inputs (button + text field)
   Widget _topForm() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -230,6 +273,9 @@ class _BoatMainState extends State<BoatMain> {
                 border: OutlineInputBorder(),
               ),
               onSubmitted: (_) => _addBoat(),
+              onChanged: (String s) {
+                BoatLastEntryPrefs.saveLastBoatName(s.trim());
+              },
             ),
           ),
         ],
@@ -237,18 +283,22 @@ class _BoatMainState extends State<BoatMain> {
     );
   }
 
-  // shared ListView builder
-  Widget _listBuilder({int? selectedIndex, required void Function(int) onTap}) {
+  Widget _listBuilder({
+    int? selectedIndex,
+    required void Function(int) onTap,
+  }) {
     if (boats.isEmpty) {
       return const Center(
-        child: Text('No boats yet. Add one to get started!',
-            style: TextStyle(fontSize: 16, color: Colors.grey)),
+        child: Text(
+          'No boats yet. Add one to get started!',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
       );
     }
     return ListView.builder(
       itemCount: boats.length,
-      itemBuilder: (context, index) {
-        final item = boats[index];
+      itemBuilder: (BuildContext context, int index) {
+        final BoatItem item = boats[index];
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           child: ListTile(
@@ -267,7 +317,6 @@ class _BoatMainState extends State<BoatMain> {
   }
 }
 
-// Side-panel detail content for wide screens
 class _SideDetailPanel extends StatelessWidget {
   final BoatItem boat;
   const _SideDetailPanel({required this.boat});
@@ -291,12 +340,22 @@ class _SideDetailPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
