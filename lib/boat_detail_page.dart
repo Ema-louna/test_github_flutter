@@ -8,10 +8,39 @@ class BoatDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Boat Details')),
+      appBar: AppBar(
+        title: const Text('Boat Details'),
+        actions: [
+          IconButton(
+            tooltip: 'Help',
+            icon: const Icon(Icons.help_outline),
+            onPressed: () {
+              // ✅ detail screen AlertDialog
+              showDialog(
+                context: context,
+                builder: (_) => const AlertDialog(
+                  title: Text('Boat Details Help'),
+                  content: Text(
+                      'This screen shows the details of the selected boat.\n\n'
+                          'Use the back button to return to the list.'),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: _DetailPanel(boat: boat),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // ✅ detail screen Snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Feature coming soon!')),
+          );
+        },
+        child: const Icon(Icons.check),
       ),
     );
   }
