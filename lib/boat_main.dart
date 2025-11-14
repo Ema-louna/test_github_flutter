@@ -50,19 +50,28 @@ class _BoatMainState extends State<BoatMain> {
       });
 
       if (last != null && last.isNotEmpty && mounted) {
+        final bool isFrench =
+            Localizations.localeOf(context).languageCode == 'fr';
+
         final bool ok = await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text('Prefill last entry?'),
-            content: Text('Use the last typed boat name:\n\n"$last"'),
+            title: Text(
+              isFrench ? 'Pré-remplir la dernière saisie ?' : 'Prefill last entry?',
+            ),
+            content: Text(
+              isFrench
+                  ? 'Utiliser le dernier nom de bateau saisi :\n\n"$last"'
+                  : 'Use the last typed boat name:\n\n"$last"',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('No'),
+                child: Text(isFrench ? 'Non' : 'No'),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Yes'),
+                child: Text(isFrench ? 'Oui' : 'Yes'),
               ),
             ],
           ),
@@ -72,28 +81,58 @@ class _BoatMainState extends State<BoatMain> {
         if (ok && mounted) {
           _controller.text = last;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Prefilled last boat name')),
+            SnackBar(
+              content: Text(
+                isFrench
+                    ? 'Dernier nom de bateau pré-rempli'
+                    : 'Prefilled last boat name',
+              ),
+            ),
           );
         }
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('DB error: $e')));
+      final bool isFrench =
+          Localizations.localeOf(context).languageCode == 'fr';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isFrench ? 'Erreur de base de données: $e' : 'DB error: $e',
+          ),
+        ),
+      );
     }
   }
 
   Future<void> _addBoat() async {
     final String text = _controller.text.trim();
+    final bool isFrench =
+        Localizations.localeOf(context).languageCode == 'fr';
+
     if (text.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Please enter a boat name!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isFrench
+                ? 'Veuillez entrer un nom de bateau.'
+                : 'Please enter a boat name!',
+          ),
+        ),
+      );
       return;
     }
     if (_dao == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Database not ready yet!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isFrench
+                ? 'La base de données n\'est pas encore prête.'
+                : 'Database not ready yet!',
+          ),
+        ),
+      );
       return;
     }
 
@@ -111,25 +150,41 @@ class _BoatMainState extends State<BoatMain> {
       }
     });
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Boat added! Total: ${boats.length}')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isFrench
+              ? 'Bateau ajouté. Total: ${boats.length}'
+              : 'Boat added! Total: ${boats.length}',
+        ),
+      ),
+    );
   }
 
   Future<void> _deleteBoatWithConfirm(int index) async {
     final BoatItem item = boats[index];
+    final bool isFrench =
+        Localizations.localeOf(context).languageCode == 'fr';
+
     final bool ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete boat?'),
-        content: Text('This will remove "${item.name}".'),
+        title: Text(
+          isFrench ? 'Supprimer le bateau ?' : 'Delete boat?',
+        ),
+        content: Text(
+          isFrench
+              ? 'Cela va supprimer "${item.name}".'
+              : 'This will remove "${item.name}".',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(isFrench ? 'Annuler' : 'Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(isFrench ? 'Supprimer' : 'Delete'),
           ),
         ],
       ),
@@ -153,24 +208,39 @@ class _BoatMainState extends State<BoatMain> {
       }
     });
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Deleted "${item.name}"')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isFrench
+              ? 'Bateau supprimé: "${item.name}"'
+              : 'Deleted "${item.name}"',
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isWide = MediaQuery.of(context).size.width >= 600;
+    final bool isFrench =
+        Localizations.localeOf(context).languageCode == 'fr';
 
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Boats for Sale')),
-        body: const Center(
+        appBar: AppBar(
+          title: Text(isFrench ? 'Bateaux à vendre' : 'Boats for Sale'),
+        ),
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 10),
-              Text('Loading Database...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 10),
+              Text(
+                isFrench
+                    ? 'Chargement de la base de données...'
+                    : 'Loading Database...',
+              ),
             ],
           ),
         ),
@@ -179,20 +249,34 @@ class _BoatMainState extends State<BoatMain> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Boats for Sale'),
+        title: Text(isFrench ? 'Bateaux à vendre' : 'Boats for Sale'),
         actions: [
           IconButton(
-            tooltip: 'Help',
-            icon: const Icon(Icons.help_outline),
+            tooltip: isFrench ? 'Instructions' : 'Instructions',
+            icon: const Icon(Icons.info_outline),
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (_) => const AlertDialog(
-                  title: Text('How to use'),
+                builder: (_) => AlertDialog(
+                  title: Text(
+                    isFrench
+                        ? 'Instructions de l\'écran des bateaux'
+                        : 'Boat screen instructions',
+                  ),
                   content: Text(
-                    'Type a boat name then press "Add Boat" to insert it.\n\n'
-                        'Tap an item to view details (phone = full screen; tablet/desktop = side panel).\n'
-                        'Your last typed boat name can be remembered for next time.',
+                    isFrench
+                        ? '1. Saisissez un nom de bateau dans le champ texte.\n'
+                        '2. Appuyez sur "Ajouter un bateau" pour l\'ajouter à la liste.\n'
+                        '3. Sur un téléphone: touchez un bateau pour ouvrir l\'écran de détails.\n'
+                        '4. Sur une tablette ou un bureau: touchez un bateau pour voir les détails à côté de la liste.\n'
+                        '5. Utilisez l\'icône de suppression pour enlever un bateau.\n'
+                        '6. L\'application mémorise votre dernier nom de bateau saisi de manière chiffrée pour le prochain lancement.'
+                        : '1. Type a boat name in the text field.\n'
+                        '2. Press "Add Boat" to insert the boat into the list.\n'
+                        '3. On a phone: tap a boat to open the details screen.\n'
+                        '4. On a tablet/desktop: tap a boat to see details beside the list.\n'
+                        '5. Use the delete icon to remove a boat.\n'
+                        '6. The app remembers your last typed boat name securely for the next launch.',
                   ),
                 ),
               );
@@ -200,21 +284,24 @@ class _BoatMainState extends State<BoatMain> {
           ),
         ],
       ),
-      body: isWide ? _wideBody() : _narrowBody(),
+      body: isWide ? _wideBody(isFrench) : _narrowBody(isFrench),
     );
   }
 
-  Widget _narrowBody() {
+  Widget _narrowBody(bool isFrench) {
     return Column(
       children: [
-        _topForm(),
+        _topForm(isFrench),
         Expanded(
           child: _listBuilder(
+            isFrench: isFrench,
             onTap: (int i) {
               final BoatItem b = boats[i];
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => BoatDetailPage(boat: b)),
+                MaterialPageRoute(
+                  builder: (_) => BoatDetailPage(boat: b),
+                ),
               );
             },
           ),
@@ -223,7 +310,7 @@ class _BoatMainState extends State<BoatMain> {
     );
   }
 
-  Widget _wideBody() {
+  Widget _wideBody(bool isFrench) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -232,9 +319,10 @@ class _BoatMainState extends State<BoatMain> {
             flex: 2,
             child: Column(
               children: [
-                _topForm(),
+                _topForm(isFrench),
                 Expanded(
                   child: _listBuilder(
+                    isFrench: isFrench,
                     selectedIndex: _selectedIndex,
                     onTap: (int i) => setState(() => _selectedIndex = i),
                   ),
@@ -246,10 +334,17 @@ class _BoatMainState extends State<BoatMain> {
           Expanded(
             flex: 3,
             child: _selectedIndex == null
-                ? const Center(child: Text('Select a boat'))
+                ? Center(
+              child: Text(
+                isFrench ? 'Sélectionnez un bateau' : 'Select a boat',
+              ),
+            )
                 : Padding(
               padding: const EdgeInsets.all(16),
-              child: _SideDetailPanel(boat: boats[_selectedIndex!]),
+              child: _SideDetailPanel(
+                boat: boats[_selectedIndex!],
+                isFrench: isFrench,
+              ),
             ),
           ),
         ],
@@ -257,20 +352,25 @@ class _BoatMainState extends State<BoatMain> {
     );
   }
 
-  Widget _topForm() {
+  Widget _topForm(bool isFrench) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          ElevatedButton(onPressed: _addBoat, child: const Text('Add Boat')),
+          ElevatedButton(
+            onPressed: _addBoat,
+            child: Text(isFrench ? 'Ajouter un bateau' : 'Add Boat'),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: _controller,
-              decoration: const InputDecoration(
-                labelText: 'Enter Boat Name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: isFrench
+                    ? 'Entrez le nom du bateau'
+                    : 'Enter Boat Name',
+                border: const OutlineInputBorder(),
               ),
               onSubmitted: (_) => _addBoat(),
               onChanged: (String s) {
@@ -286,12 +386,15 @@ class _BoatMainState extends State<BoatMain> {
   Widget _listBuilder({
     int? selectedIndex,
     required void Function(int) onTap,
+    required bool isFrench,
   }) {
     if (boats.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'No boats yet. Add one to get started!',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+          isFrench
+              ? 'Aucun bateau pour le moment. Ajoutez-en un pour commencer.'
+              : 'No boats yet. Add one to get started!',
+          style: const TextStyle(fontSize: 16, color: Colors.grey),
         ),
       );
     }
@@ -302,8 +405,13 @@ class _BoatMainState extends State<BoatMain> {
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           child: ListTile(
-            title: Text(item.name, style: Theme.of(context).textTheme.bodyLarge),
-            subtitle: Text('Row ${index + 1}'),
+            title: Text(
+              item.name,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            subtitle: Text(
+              isFrench ? 'Ligne ${index + 1}' : 'Row ${index + 1}',
+            ),
             selected: selectedIndex == index,
             onTap: () => onTap(index),
             trailing: IconButton(
@@ -319,17 +427,25 @@ class _BoatMainState extends State<BoatMain> {
 
 class _SideDetailPanel extends StatelessWidget {
   final BoatItem boat;
-  const _SideDetailPanel({required this.boat});
+  final bool isFrench;
+
+  const _SideDetailPanel({
+    required this.boat,
+    required this.isFrench,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Boat Details', style: Theme.of(context).textTheme.headlineSmall),
+        Text(
+          isFrench ? 'Détails du bateau' : 'Boat Details',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
         const SizedBox(height: 16),
-        _row('ID', boat.id?.toString() ?? '-'),
-        _row('Name', boat.name),
+        _row(isFrench ? 'ID' : 'ID', boat.id?.toString() ?? '-'),
+        _row(isFrench ? 'Nom' : 'Name', boat.name),
       ],
     );
   }
