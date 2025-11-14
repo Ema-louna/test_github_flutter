@@ -182,17 +182,20 @@ class _BoatMainState extends State<BoatMain> {
         title: const Text('Boats for Sale'),
         actions: [
           IconButton(
-            tooltip: 'Help',
-            icon: const Icon(Icons.help_outline),
+            tooltip: 'Instructions',
+            icon: const Icon(Icons.info_outline),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (_) => const AlertDialog(
-                  title: Text('How to use'),
+                  title: Text('Boat screen instructions'),
                   content: Text(
-                    'Type a boat name then press "Add Boat" to insert it.\n\n'
-                        'Tap an item to view details (phone = full screen; tablet/desktop = side panel).\n'
-                        'Your last typed boat name can be remembered for next time.',
+                    '1. Type a boat name in the text field.\n'
+                        '2. Press "Add Boat" to insert the boat into the list.\n'
+                        '3. On a phone: tap a boat to open the details screen.\n'
+                        '4. On a tablet/desktop: tap a boat to see details beside the list.\n'
+                        '5. Use the delete icon to remove a boat.\n'
+                        '6. The app remembers your last typed boat name securely for the next launch.',
                   ),
                 ),
               );
