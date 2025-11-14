@@ -6,6 +6,7 @@ import 'customer.dart';
 import 'customer_dao.dart';
 import 'database.dart';
 import 'customer_detail_page.dart';
+import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 
 class CustomerMain extends StatefulWidget {
   const CustomerMain({super.key});
@@ -20,6 +21,7 @@ class _CustomerMainState extends State<CustomerMain> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _licenseController = TextEditingController();
+  final EncryptedSharedPreferences _encryptedPrefs = EncryptedSharedPreferences();
 
   List<Customer> _customers = [];
   AppDatabase? _database;
@@ -31,6 +33,7 @@ class _CustomerMainState extends State<CustomerMain> {
   void initState() {
     super.initState();
     _initDatabase();
+    _loadLastCustomerData();
   }
 
   Future<void> _initDatabase() async {
@@ -107,6 +110,8 @@ class _CustomerMainState extends State<CustomerMain> {
       // Insert into database
       await _customerDao!.insertCustomer(customer);
 
+      await _saveLastCustomerData(customer);
+
       print('Customer inserted successfully');
 
       // Reload customers from database
@@ -134,6 +139,47 @@ class _CustomerMainState extends State<CustomerMain> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
+    }
+  }
+
+  /// Load last saved customer data from encrypted storage
+  Future<void> _loadLastCustomerData() async {
+    try {
+      final firstName = await _encryptedPrefs.getString('lastFirstName');
+      final lastName = await _encryptedPrefs.getString('lastLastName');
+      final address = await _encryptedPrefs.getString('lastAddress');
+      final dob = await _encryptedPrefs.getString('lastDOB');
+      final license = await _encryptedPrefs.getString('lastLicense');
+
+      // Pre-fill fields if data exists
+      if (firstName.isNotEmpty) {
+        setState(() {
+          _firstNameController.text = firstName;
+          _lastNameController.text = lastName;
+          _addressController.text = address;
+          _dobController.text = dob;
+          _licenseController.text = license;
+        });
+
+        print('Loaded last customer data from encrypted storage');
+      }
+    } catch (e) {
+      print('Error loading encrypted data: $e');
+    }
+  }
+
+  /// Save customer data to encrypted storage
+  Future<void> _saveLastCustomerData(Customer customer) async {
+    try {
+      await _encryptedPrefs.setString('lastFirstName', customer.firstName);
+      await _encryptedPrefs.setString('lastLastName', customer.lastName);
+      await _encryptedPrefs.setString('lastAddress', customer.address);
+      await _encryptedPrefs.setString('lastDOB', customer.dateOfBirth);
+      await _encryptedPrefs.setString('lastLicense', customer.driverLicense);
+
+      print('Saved customer data to encrypted storage');
+    } catch (e) {
+      print('Error saving encrypted data: $e');
     }
   }
 
