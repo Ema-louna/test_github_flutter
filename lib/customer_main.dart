@@ -40,19 +40,13 @@ class _CustomerMainState extends State<CustomerMain> {
     try {
       print('Initializing database... kIsWeb = $kIsWeb');
 
-      // CRITICAL: Must set factory BEFORE any database operations
       if (kIsWeb) {
-        print('Setting up web database factory...');
         sqflite.databaseFactory = databaseFactoryFfiWeb;
       }
-
-      print('Creating database...');
 
       final database = await $FloorAppDatabase
           .databaseBuilder('customer_database.db')
           .build();
-
-      print('Database created successfully');
 
       _database = database;
       _customerDao = database.customerDao;
@@ -63,8 +57,6 @@ class _CustomerMainState extends State<CustomerMain> {
         _customers = customers;
         _isLoading = false;
       });
-
-      print('Database initialized. Total: ${_customers.length}');
     } catch (e, stackTrace) {
       print('Error initializing database: $e');
       print('Stack trace: $stackTrace');
@@ -76,7 +68,6 @@ class _CustomerMainState extends State<CustomerMain> {
 
   Future<void> _addCustomer() async {
     if (_customerDao == null) {
-      print('Database not ready');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Database not ready. Please wait...')),
       );
@@ -95,7 +86,6 @@ class _CustomerMainState extends State<CustomerMain> {
     }
 
     try {
-      // Create new customer with auto-incremented ID
       final customer = Customer(
         Customer.ID++,
         _firstNameController.text,
@@ -105,25 +95,15 @@ class _CustomerMainState extends State<CustomerMain> {
         _licenseController.text,
       );
 
-      print('Adding customer: ${customer.firstName} ${customer.lastName} (ID: ${customer.id})');
-
-      // Insert into database
       await _customerDao!.insertCustomer(customer);
-
       await _saveLastCustomerData(customer);
 
-      print('Customer inserted successfully');
-
-      // Reload customers from database
       final customers = await _customerDao!.findAllCustomers();
-
-      print('After insert: ${customers.length} customers in database');
 
       setState(() {
         _customers = customers;
       });
 
-      // Clear fields
       _firstNameController.clear();
       _lastNameController.clear();
       _addressController.clear();
@@ -134,15 +114,12 @@ class _CustomerMainState extends State<CustomerMain> {
         SnackBar(content: Text('Customer added successfully! Total: ${_customers.length}')),
       );
     } catch (e) {
-      print('Error adding customer: $e');
-      print('Error type: ${e.runtimeType}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
     }
   }
 
-  /// Load last saved customer data from encrypted storage
   Future<void> _loadLastCustomerData() async {
     try {
       final firstName = await _encryptedPrefs.getString('lastFirstName');
@@ -151,7 +128,6 @@ class _CustomerMainState extends State<CustomerMain> {
       final dob = await _encryptedPrefs.getString('lastDOB');
       final license = await _encryptedPrefs.getString('lastLicense');
 
-      // Pre-fill fields if data exists
       if (firstName.isNotEmpty) {
         setState(() {
           _firstNameController.text = firstName;
@@ -160,15 +136,12 @@ class _CustomerMainState extends State<CustomerMain> {
           _dobController.text = dob;
           _licenseController.text = license;
         });
-
-        print('Loaded last customer data from encrypted storage');
       }
     } catch (e) {
       print('Error loading encrypted data: $e');
     }
   }
 
-  /// Save customer data to encrypted storage
   Future<void> _saveLastCustomerData(Customer customer) async {
     try {
       await _encryptedPrefs.setString('lastFirstName', customer.firstName);
@@ -176,16 +149,33 @@ class _CustomerMainState extends State<CustomerMain> {
       await _encryptedPrefs.setString('lastAddress', customer.address);
       await _encryptedPrefs.setString('lastDOB', customer.dateOfBirth);
       await _encryptedPrefs.setString('lastLicense', customer.driverLicense);
-
-      print('Saved customer data to encrypted storage');
     } catch (e) {
       print('Error saving encrypted data: $e');
     }
   }
 
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Instructions'),
+        content: const Text(
+            'Fill in all customer fields and click Add Customer.\n'
+                'Tap a customer to view details.\n'
+                'On large screens, details appear beside the list.'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Check if screen is wide (tablet/desktop)
     final isWide = MediaQuery.of(context).size.width >= 600;
 
     if (_isLoading) {
@@ -193,6 +183,12 @@ class _CustomerMainState extends State<CustomerMain> {
         appBar: AppBar(
           title: const Text('Customer List'),
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: _showHelpDialog,
+            )
+          ],
         ),
         body: const Center(
           child: Column(
@@ -211,12 +207,17 @@ class _CustomerMainState extends State<CustomerMain> {
       appBar: AppBar(
         title: const Text('Customer List'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: _showHelpDialog,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Input fields (same as before)
             TextField(
               controller: _firstNameController,
               decoration: const InputDecoration(
@@ -271,11 +272,9 @@ class _CustomerMainState extends State<CustomerMain> {
             ),
             const SizedBox(height: 10),
 
-            // RESPONSIVE LAYOUT: Row for tablet, Column for phone
             Expanded(
               child: Row(
                 children: [
-                  // LEFT SIDE: ListView (always shown)
                   Expanded(
                     flex: 2,
                     child: _customers.isEmpty
@@ -300,10 +299,8 @@ class _CustomerMainState extends State<CustomerMain> {
                             selected: _selectedIndex == index,
                             onTap: () {
                               if (isWide) {
-                                // TABLET: Show details in side panel
                                 setState(() => _selectedIndex = index);
                               } else {
-                                // PHONE: Navigate to full-screen detail page
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -320,7 +317,6 @@ class _CustomerMainState extends State<CustomerMain> {
                     ),
                   ),
 
-                  // RIGHT SIDE: Detail panel (only on wide screens)
                   if (isWide && _selectedIndex != null)
                     Expanded(
                       flex: 3,
@@ -356,7 +352,6 @@ class _CustomerMainState extends State<CustomerMain> {
     );
   }
 
-// Helper method to build detail rows
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
