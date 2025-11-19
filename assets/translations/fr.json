@@ -1,0 +1,19 @@
+{
+  "app_title": "Liste de clients",
+  "first_name": "Prénom",
+  "last_name": "Nom de famille",
+  "address": "Adresse",
+  "date_of_birth": "Date de naissance (AAAA-MM-JJ)",
+  "driver_license": "Permis de conduire #",
+  "add_customer": "Ajouter un client",
+  "total_customers": "Total des clients",
+  "no_customers": "Aucun client pour le moment. Ajoutez-en un pour commencer!",
+  "all_fields_required": "Tous les champs sont obligatoires!",
+  "customer_added": "Client ajouté avec succès! Total",
+  "database_not_ready": "Base de données pas prête. Veuillez patienter...",
+  "customer_details": "Détails du client",
+  "instructions": "Instructions",
+  "help_text": "Remplissez tous les champs client et cliquez sur Ajouter un client.\nAppuyez sur un client pour voir les détails.\nSur les grands écrans, les détails apparaissent à côté de la liste.",
+  "ok": "OK",
+  "initializing": "Initialisation de la base de données..."
+}
