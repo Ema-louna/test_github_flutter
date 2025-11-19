@@ -1,0 +1,19 @@
+{
+  "app_title": "Customer List",
+  "first_name": "First Name",
+  "last_name": "Last Name",
+  "address": "Address",
+  "date_of_birth": "Date of Birth (YYYY-MM-DD)",
+  "driver_license": "Driver License #",
+  "add_customer": "Add Customer",
+  "total_customers": "Total customers",
+  "no_customers": "No customers yet. Add one to get started!",
+  "all_fields_required": "All fields are required!",
+  "customer_added": "Customer added successfully! Total",
+  "database_not_ready": "Database not ready. Please wait...",
+  "customer_details": "Customer Details",
+  "instructions": "Instructions",
+  "help_text": "Fill in all customer fields and click Add Customer.\nTap a customer to view details.\nOn large screens, details appear beside the list.",
+  "ok": "OK",
+  "initializing": "Initializing database..."
+}

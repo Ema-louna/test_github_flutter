@@ -7,6 +7,8 @@ import 'customer_dao.dart';
 import 'database.dart';
 import 'customer_detail_page.dart';
 import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
+import 'app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 class CustomerMain extends StatefulWidget {
   const CustomerMain({super.key});
@@ -28,12 +30,19 @@ class _CustomerMainState extends State<CustomerMain> {
   CustomerDao? _customerDao;
   bool _isLoading = true;
   int? _selectedIndex;
+  Locale _locale = const Locale('en');
 
   @override
   void initState() {
     super.initState();
     _initDatabase();
     _loadLastCustomerData();
+  }
+
+  void _changeLanguage(String languageCode) {
+    setState(() {
+      _locale = Locale(languageCode);
+    });
   }
 
   Future<void> _initDatabase() async {
@@ -69,7 +78,7 @@ class _CustomerMainState extends State<CustomerMain> {
   Future<void> _addCustomer() async {
     if (_customerDao == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Database not ready. Please wait...')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.translate('database_not_ready')!)),
       );
       return;
     }
@@ -80,7 +89,7 @@ class _CustomerMainState extends State<CustomerMain> {
         _dobController.text.isEmpty ||
         _licenseController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All fields are required!')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.translate('all_fields_required')!)),
       );
       return;
     }
@@ -111,7 +120,7 @@ class _CustomerMainState extends State<CustomerMain> {
       _licenseController.clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Customer added successfully! Total: ${_customers.length}')),
+        SnackBar(content: Text('${AppLocalizations.of(context)!.translate('customer_added')!}: ${_customers.length}')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -158,16 +167,12 @@ class _CustomerMainState extends State<CustomerMain> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Instructions'),
-        content: const Text(
-            'Fill in all customer fields and click Add Customer.\n'
-                'Tap a customer to view details.\n'
-                'On large screens, details appear beside the list.'
-        ),
+        title: Text(AppLocalizations.of(context)!.translate('instructions')!),
+        content: Text(AppLocalizations.of(context)!.translate('help_text')!),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(AppLocalizations.of(context)!.translate('ok')!),
           ),
         ],
       ),
@@ -178,176 +183,233 @@ class _CustomerMainState extends State<CustomerMain> {
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width >= 600;
 
-    if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Customer List'),
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.info_outline),
-              onPressed: _showHelpDialog,
-            )
-          ],
-        ),
-        body: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Initializing database...'),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Customer List'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline),
-            onPressed: _showHelpDialog,
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _firstNameController,
-              decoration: const InputDecoration(
-                labelText: 'First Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _lastNameController,
-              decoration: const InputDecoration(
-                labelText: 'Last Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _addressController,
-              decoration: const InputDecoration(
-                labelText: 'Address',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _dobController,
-              decoration: const InputDecoration(
-                labelText: 'Date of Birth (YYYY-MM-DD)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _licenseController,
-              decoration: const InputDecoration(
-                labelText: 'Driver License #',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.onPrimary,
-              ),
-              onPressed: _addCustomer,
-              child: const Text('Add Customer'),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Total customers: ${_customers.length}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _customers.isEmpty
-                        ? const Center(
-                      child: Text(
-                        'No customers yet. Add one to get started!',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
+    return Localizations.override(
+      context: context,
+      locale: _locale,
+      delegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      child: Builder(
+        builder: (context) {
+          if (_isLoading) {
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(AppLocalizations.of(context)!.translate('app_title')!),
+                backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.info_outline),
+                    onPressed: _showHelpDialog,
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.language),
+                    onSelected: _changeLanguage,
+                    itemBuilder: (BuildContext context) => [
+                      const PopupMenuItem(
+                        value: 'en',
+                        child: Text('English'),
                       ),
-                    )
-                        : ListView.builder(
-                      itemCount: _customers.length,
-                      itemBuilder: (context, index) {
-                        final customer = _customers[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          child: ListTile(
-                            title: Text(
-                              '${customer.firstName} ${customer.lastName}',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            subtitle: Text(customer.address),
-                            selected: _selectedIndex == index,
-                            onTap: () {
-                              if (isWide) {
-                                setState(() => _selectedIndex = index);
-                              } else {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CustomerDetailPage(
-                                      customer: customer,
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        );
-                      },
+                      const PopupMenuItem(
+                        value: 'fr',
+                        child: Text('Français'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(AppLocalizations.of(context)!.translate('initializing')!),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(AppLocalizations.of(context)!.translate('app_title')!),
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.help_outline),
+                  onPressed: _showHelpDialog,
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.language),
+                  onSelected: _changeLanguage,
+                  itemBuilder: (BuildContext context) => [
+                    const PopupMenuItem(
+                      value: 'en',
+                      child: Text('English'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'fr',
+                      child: Text('Français'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _firstNameController,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.translate('first_name')!,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _lastNameController,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.translate('last_name')!,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _addressController,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.translate('address')!,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _dobController,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.translate('date_of_birth')!,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _licenseController,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.translate('driver_license')!,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                    onPressed: _addCustomer,
+                    child: Text(AppLocalizations.of(context)!.translate('add_customer')!),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${AppLocalizations.of(context)!.translate('total_customers')!}: ${_customers.length}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 10),
 
-                  if (isWide && _selectedIndex != null)
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        color: Colors.grey[200],
-                        padding: const EdgeInsets.all(16),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Customer Details',
-                                style: Theme.of(context).textTheme.headlineSmall,
-                              ),
-                              const SizedBox(height: 20),
-                              _buildDetailRow('ID', '${_customers[_selectedIndex!].id}'),
-                              _buildDetailRow('First Name', _customers[_selectedIndex!].firstName),
-                              _buildDetailRow('Last Name', _customers[_selectedIndex!].lastName),
-                              _buildDetailRow('Address', _customers[_selectedIndex!].address),
-                              _buildDetailRow('Date of Birth', _customers[_selectedIndex!].dateOfBirth),
-                              _buildDetailRow('Driver License', _customers[_selectedIndex!].driverLicense),
-                            ],
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _customers.isEmpty
+                              ? Center(
+                            child: Text(
+                              AppLocalizations.of(context)!.translate('no_customers')!,
+                              style: const TextStyle(fontSize: 16, color: Colors.grey),
+                            ),
+                          )
+                              : ListView.builder(
+                            itemCount: _customers.length,
+                            itemBuilder: (context, index) {
+                              final customer = _customers[index];
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                child: ListTile(
+                                  title: Text(
+                                    '${customer.firstName} ${customer.lastName}',
+                                    style: Theme.of(context).textTheme.bodyLarge,
+                                  ),
+                                  subtitle: Text(customer.address),
+                                  selected: _selectedIndex == index,
+                                  onTap: () {
+                                    if (isWide) {
+                                      setState(() => _selectedIndex = index);
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => CustomerDetailPage(
+                                            customer: customer,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              );
+                            },
                           ),
                         ),
-                      ),
+
+                        if (isWide && _selectedIndex != null)
+                          Expanded(
+                            flex: 3,
+                            child: Container(
+                              color: Colors.grey[200],
+                              padding: const EdgeInsets.all(16),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      AppLocalizations.of(context)!.translate('customer_details')!,
+                                      style: Theme.of(context).textTheme.headlineSmall,
+                                    ),
+                                    const SizedBox(height: 20),
+                                    _buildDetailRow('ID', '${_customers[_selectedIndex!].id}'),
+                                    _buildDetailRow(
+                                      AppLocalizations.of(context)!.translate('first_name')!,
+                                      _customers[_selectedIndex!].firstName,
+                                    ),
+                                    _buildDetailRow(
+                                      AppLocalizations.of(context)!.translate('last_name')!,
+                                      _customers[_selectedIndex!].lastName,
+                                    ),
+                                    _buildDetailRow(
+                                      AppLocalizations.of(context)!.translate('address')!,
+                                      _customers[_selectedIndex!].address,
+                                    ),
+                                    _buildDetailRow(
+                                      AppLocalizations.of(context)!.translate('date_of_birth')!,
+                                      _customers[_selectedIndex!].dateOfBirth,
+                                    ),
+                                    _buildDetailRow(
+                                      AppLocalizations.of(context)!.translate('driver_license')!,
+                                      _customers[_selectedIndex!].driverLicense,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
