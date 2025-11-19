@@ -10,6 +10,10 @@ import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+/// Main customer management page
+///
+/// Allows users to add, view, and manage customers.
+/// Supports responsive layout and multi-language.
 class CustomerMain extends StatefulWidget {
   const CustomerMain({super.key});
 
@@ -18,18 +22,30 @@ class CustomerMain extends StatefulWidget {
 }
 
 class _CustomerMainState extends State<CustomerMain> {
+  /// Text controller for first name input
   final TextEditingController _firstNameController = TextEditingController();
+  /// Text controller for last name input
   final TextEditingController _lastNameController = TextEditingController();
+  /// Text controller for address input
   final TextEditingController _addressController = TextEditingController();
+  /// Text controller for date of birth input
   final TextEditingController _dobController = TextEditingController();
+  /// Text controller for driver license input
   final TextEditingController _licenseController = TextEditingController();
+  /// Encrypted storage for saving last customer data
   final EncryptedSharedPreferences _encryptedPrefs = EncryptedSharedPreferences();
 
+  /// List of all customers loaded from database
   List<Customer> _customers = [];
+  /// Database instance
   AppDatabase? _database;
+  /// Data access object for customer operations
   CustomerDao? _customerDao;
+  /// Loading state indicator
   bool _isLoading = true;
+  /// Index of selected customer in tablet view
   int? _selectedIndex;
+  /// Current locale for language support
   Locale _locale = const Locale('en');
 
   @override
@@ -39,12 +55,19 @@ class _CustomerMainState extends State<CustomerMain> {
     _loadLastCustomerData();
   }
 
+  /// Changes the application language
+  ///
+  /// [languageCode] Language code ('en' or 'fr')
   void _changeLanguage(String languageCode) {
     setState(() {
       _locale = Locale(languageCode);
     });
   }
 
+  /// Initializes the database connection
+  ///
+  /// Sets up Floor database and loads existing customers.
+  /// Supports web platform with sqflite_common_ffi_web.
   Future<void> _initDatabase() async {
     try {
       print('Initializing database... kIsWeb = $kIsWeb');
@@ -75,6 +98,11 @@ class _CustomerMainState extends State<CustomerMain> {
     }
   }
 
+  /// Adds a new customer to the database
+  ///
+  /// Validates all fields before adding.
+  /// Saves customer data to encrypted storage.
+  /// Updates the UI with the new customer list.
   Future<void> _addCustomer() async {
     if (_customerDao == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -129,6 +157,9 @@ class _CustomerMainState extends State<CustomerMain> {
     }
   }
 
+  /// Loads last saved customer data from encrypted storage
+  ///
+  /// Pre-fills form fields with data from the last added customer.
   Future<void> _loadLastCustomerData() async {
     try {
       final firstName = await _encryptedPrefs.getString('lastFirstName');
@@ -151,6 +182,9 @@ class _CustomerMainState extends State<CustomerMain> {
     }
   }
 
+  /// Saves customer data to encrypted storage
+  ///
+  /// [customer] The customer object to save
   Future<void> _saveLastCustomerData(Customer customer) async {
     try {
       await _encryptedPrefs.setString('lastFirstName', customer.firstName);
@@ -163,18 +197,31 @@ class _CustomerMainState extends State<CustomerMain> {
     }
   }
 
+  /// Shows help dialog with usage instructions
   void _showHelpDialog() {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.translate('instructions')!),
-        content: Text(AppLocalizations.of(context)!.translate('help_text')!),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.translate('ok')!),
-          ),
+      builder: (dialogContext) => Localizations.override(
+        context: dialogContext,
+        locale: _locale,
+        delegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
         ],
+        child: Builder(
+          builder: (context) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.translate('instructions')!),
+            content: Text(AppLocalizations.of(context)!.translate('help_text')!),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(AppLocalizations.of(context)!.translate('ok')!),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -414,6 +461,11 @@ class _CustomerMainState extends State<CustomerMain> {
     );
   }
 
+  /// Builds a detail row widget
+  ///
+  /// [label] The field label
+  /// [value] The field value
+  /// Returns a formatted widget displaying label and value
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
