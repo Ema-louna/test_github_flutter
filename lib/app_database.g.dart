@@ -72,7 +72,7 @@ class _$AppDatabase extends AppDatabase {
     changeListener = listener ?? StreamController<String>.broadcast();
   }
 
-  BoatItemDao? _boatItemDaoInstance;
+  BoatListingDao? _boatListingDaoInstance;
 
   Future<sqflite.Database> open(
     String path,
@@ -96,7 +96,7 @@ class _$AppDatabase extends AppDatabase {
       },
       onCreate: (database, version) async {
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `BoatItem` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `BoatListing` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `yearBuilt` INTEGER NOT NULL, `lengthMeters` REAL NOT NULL, `powerType` TEXT NOT NULL, `price` REAL NOT NULL, `address` TEXT NOT NULL)');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -105,21 +105,52 @@ class _$AppDatabase extends AppDatabase {
   }
 
   @override
-  BoatItemDao get boatItemDao {
-    return _boatItemDaoInstance ??= _$BoatItemDao(database, changeListener);
+  BoatListingDao get boatListingDao {
+    return _boatListingDaoInstance ??=
+        _$BoatListingDao(database, changeListener);
   }
 }
 
-class _$BoatItemDao extends BoatItemDao {
-  _$BoatItemDao(
+class _$BoatListingDao extends BoatListingDao {
+  _$BoatListingDao(
     this.database,
     this.changeListener,
   )   : _queryAdapter = QueryAdapter(database),
-        _boatItemInsertionAdapter = InsertionAdapter(
+        _boatListingInsertionAdapter = InsertionAdapter(
             database,
-            'BoatItem',
-            (BoatItem item) =>
-                <String, Object?>{'id': item.id, 'name': item.name});
+            'BoatListing',
+            (BoatListing item) => <String, Object?>{
+                  'id': item.id,
+                  'yearBuilt': item.yearBuilt,
+                  'lengthMeters': item.lengthMeters,
+                  'powerType': item.powerType,
+                  'price': item.price,
+                  'address': item.address
+                }),
+        _boatListingUpdateAdapter = UpdateAdapter(
+            database,
+            'BoatListing',
+            ['id'],
+            (BoatListing item) => <String, Object?>{
+                  'id': item.id,
+                  'yearBuilt': item.yearBuilt,
+                  'lengthMeters': item.lengthMeters,
+                  'powerType': item.powerType,
+                  'price': item.price,
+                  'address': item.address
+                }),
+        _boatListingDeletionAdapter = DeletionAdapter(
+            database,
+            'BoatListing',
+            ['id'],
+            (BoatListing item) => <String, Object?>{
+                  'id': item.id,
+                  'yearBuilt': item.yearBuilt,
+                  'lengthMeters': item.lengthMeters,
+                  'powerType': item.powerType,
+                  'price': item.price,
+                  'address': item.address
+                });
 
   final sqflite.DatabaseExecutor database;
 
@@ -127,24 +158,52 @@ class _$BoatItemDao extends BoatItemDao {
 
   final QueryAdapter _queryAdapter;
 
-  final InsertionAdapter<BoatItem> _boatItemInsertionAdapter;
+  final InsertionAdapter<BoatListing> _boatListingInsertionAdapter;
+
+  final UpdateAdapter<BoatListing> _boatListingUpdateAdapter;
+
+  final DeletionAdapter<BoatListing> _boatListingDeletionAdapter;
 
   @override
-  Future<List<BoatItem>> findAll() async {
-    return _queryAdapter.queryList('SELECT * FROM BoatItem ORDER BY id DESC',
-        mapper: (Map<String, Object?> row) =>
-            BoatItem(id: row['id'] as int?, name: row['name'] as String));
+  Future<List<BoatListing>> findAll() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM BoatListing ORDER BY yearBuilt DESC, id DESC',
+        mapper: (Map<String, Object?> row) => BoatListing(
+            id: row['id'] as int?,
+            yearBuilt: row['yearBuilt'] as int,
+            lengthMeters: row['lengthMeters'] as double,
+            powerType: row['powerType'] as String,
+            price: row['price'] as double,
+            address: row['address'] as String));
   }
 
   @override
-  Future<void> deleteById(int id) async {
-    await _queryAdapter
-        .queryNoReturn('DELETE FROM BoatItem WHERE id = ?1', arguments: [id]);
+  Future<BoatListing?> findById(int id) async {
+    return _queryAdapter.query('SELECT * FROM BoatListing WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => BoatListing(
+            id: row['id'] as int?,
+            yearBuilt: row['yearBuilt'] as int,
+            lengthMeters: row['lengthMeters'] as double,
+            powerType: row['powerType'] as String,
+            price: row['price'] as double,
+            address: row['address'] as String),
+        arguments: [id]);
   }
 
   @override
-  Future<int> insertItem(BoatItem item) {
-    return _boatItemInsertionAdapter.insertAndReturnId(
-        item, OnConflictStrategy.abort);
+  Future<int> insertListing(BoatListing listing) {
+    return _boatListingInsertionAdapter.insertAndReturnId(
+        listing, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateListing(BoatListing listing) {
+    return _boatListingUpdateAdapter.updateAndReturnChangedRows(
+        listing, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> deleteListing(BoatListing listing) {
+    return _boatListingDeletionAdapter.deleteAndReturnChangedRows(listing);
   }
 }
