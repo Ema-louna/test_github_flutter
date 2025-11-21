@@ -46,6 +46,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   generate: true
+  assets:
+    - assets/translations/en.json
+    - assets/translations/fr.json
 
 
 

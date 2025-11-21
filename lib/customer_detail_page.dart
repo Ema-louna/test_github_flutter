@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'customer.dart';
 
+/// Detail page displaying full customer information
+///
+/// Shows all fields of a selected customer in a
+/// full-screen view on phones.
 class CustomerDetailPage extends StatelessWidget {
+  /// The customer to display
   final Customer customer;
 
+  /// Creates a CustomerDetailPage
+  ///
+  /// [customer] The customer object to display
   const CustomerDetailPage({
     super.key,
     required this.customer,
@@ -33,6 +41,12 @@ class CustomerDetailPage extends StatelessWidget {
     );
   }
 
+  /// Builds a detail row widget
+  ///
+  /// [context] Build context for theming
+  /// [label] The field label
+  /// [value] The field value
+  /// Returns a formatted widget displaying label and value
   Widget _buildDetailRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
