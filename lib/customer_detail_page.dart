@@ -3,18 +3,22 @@ import 'customer.dart';
 
 /// Detail page displaying full customer information
 ///
-/// Shows all fields of a selected customer in a
-/// full-screen view on phones.
+/// Shows all fields of a selected customer with delete option
 class CustomerDetailPage extends StatelessWidget {
   /// The customer to display
   final Customer customer;
 
+  /// Callback function when delete is pressed
+  final VoidCallback? onDelete;
+
   /// Creates a CustomerDetailPage
   ///
   /// [customer] The customer object to display
+  /// [onDelete] Optional callback for delete action
   const CustomerDetailPage({
     super.key,
     required this.customer,
+    this.onDelete,
   });
 
   @override
@@ -35,6 +39,25 @@ class CustomerDetailPage extends StatelessWidget {
             _buildDetailRow(context, 'Address', customer.address),
             _buildDetailRow(context, 'Date of Birth', customer.dateOfBirth),
             _buildDetailRow(context, 'Driver License', customer.driverLicense),
+            const SizedBox(height: 20),
+            // DELETE BUTTON
+            if (onDelete != null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context); // Close detail page first
+                    onDelete!(); // Then trigger delete
+                  },
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Delete Customer'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

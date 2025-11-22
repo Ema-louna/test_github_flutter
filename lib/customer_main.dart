@@ -106,7 +106,7 @@ class _CustomerMainState extends State<CustomerMain> {
   Future<void> _addCustomer() async {
     if (_customerDao == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.translate('database_not_ready')!)),
+        const SnackBar(content: Text('Database not ready. Please wait...')),
       );
       return;
     }
@@ -117,7 +117,7 @@ class _CustomerMainState extends State<CustomerMain> {
         _dobController.text.isEmpty ||
         _licenseController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.translate('all_fields_required')!)),
+        const SnackBar(content: Text('All fields are required!')),
       );
       return;
     }
@@ -148,7 +148,7 @@ class _CustomerMainState extends State<CustomerMain> {
       _licenseController.clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${AppLocalizations.of(context)!.translate('customer_added')!}: ${_customers.length}')),
+        SnackBar(content: Text('Customer added successfully! Total: ${_customers.length}')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -397,6 +397,7 @@ class _CustomerMainState extends State<CustomerMain> {
                                         MaterialPageRoute(
                                           builder: (context) => CustomerDetailPage(
                                             customer: customer,
+                                            onDelete: () => _deleteCustomer(index),
                                           ),
                                         ),
                                       );
@@ -443,6 +444,20 @@ class _CustomerMainState extends State<CustomerMain> {
                                     _buildDetailRow(
                                       AppLocalizations.of(context)!.translate('driver_license')!,
                                       _customers[_selectedIndex!].driverLicense,
+                                    ),
+                                    const SizedBox(height: 20),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        onPressed: () => _deleteCustomer(_selectedIndex!),
+                                        icon: const Icon(Icons.delete),
+                                        label: const Text('Delete Customer'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -491,5 +506,55 @@ class _CustomerMainState extends State<CustomerMain> {
         ],
       ),
     );
+  }
+  /// Deletes a customer from the database
+  ///
+  /// [index] The index of the customer to delete
+  /// Shows confirmation dialog before deleting
+  Future<void> _deleteCustomer(int index) async {
+    final customer = _customers[index];
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Customer'),
+        content: Text('Are you sure you want to delete ${customer.firstName} ${customer.lastName}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        // Delete from database
+        await _customerDao!.deleteCustomer(customer);
+
+        // Reload customers
+        final customers = await _customerDao!.findAllCustomers();
+
+        setState(() {
+          _customers = customers;
+          _selectedIndex = null; // Clear selection
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Customer deleted successfully!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting: $e')),
+        );
+      }
+    }
   }
 }
