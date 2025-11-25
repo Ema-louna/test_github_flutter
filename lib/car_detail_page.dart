@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'Car.dart';
 
 class CarDetailPage extends StatefulWidget {
-  final Map carData;
+  final Car car;
   final bool fullScreen;
-  final Function(Map updatedCar)? onUpdate;
+  final Future<void> Function(Car updatedCar, {bool delete}) onUpdate;
 
   const CarDetailPage({
     super.key,
-    required this.carData,
+    required this.car,
+    required this.onUpdate,
     this.fullScreen = true,
-    this.onUpdate,
   });
 
   @override
@@ -27,22 +28,22 @@ class _CarDetailPageState extends State<CarDetailPage> {
   void initState() {
     super.initState();
 
-    _name = TextEditingController(text: widget.carData["name"]);
-    _model = TextEditingController(text: widget.carData["model"]);
-    _year = TextEditingController(text: widget.carData["year"]);
-    _color = TextEditingController(text: widget.carData["color"]);
-    _description = TextEditingController(text: widget.carData["description"]);
+    _name = TextEditingController(text: widget.car.name);
+    _model = TextEditingController(text: widget.car.model);
+    _year = TextEditingController(text: widget.car.year);
+    _color = TextEditingController(text: widget.car.color);
+    _description = TextEditingController(text: widget.car.description);
   }
 
-  Map<String, dynamic> _collectUpdatedCar() {
-    return {
-      "id": widget.carData["id"],
-      "name": _name.text,
-      "model": _model.text,
-      "year": _year.text,
-      "color": _color.text,
-      "description": _description.text,
-    };
+  Car _getUpdatedCar() {
+    return Car(
+      widget.car.id,
+      _name.text,
+      _model.text,
+      _year.text,
+      _color.text,
+      _description.text,
+    );
   }
 
   @override
@@ -50,10 +51,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
     return Scaffold(
       appBar: widget.fullScreen
           ? AppBar(
-        title: Text(
-          _name.text,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        title: Text(_name.text),
       )
           : null,
       body: Padding(
@@ -63,48 +61,32 @@ class _CarDetailPageState extends State<CarDetailPage> {
             children: [
               TextField(
                 controller: _name,
-                decoration: const InputDecoration(
-                  labelText: "Car Name",
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: "Name", border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
 
               TextField(
                 controller: _model,
-                decoration: const InputDecoration(
-                  labelText: "Model",
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: "Model", border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
 
               TextField(
                 controller: _year,
-                decoration: const InputDecoration(
-                  labelText: "Year",
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: "Year", border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
 
               TextField(
                 controller: _color,
-                decoration: const InputDecoration(
-                  labelText: "Color",
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: "Color", border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
 
               TextField(
                 controller: _description,
                 maxLines: 5,
-                decoration: const InputDecoration(
-                  labelText: "Description",
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: "Description", border: OutlineInputBorder()),
               ),
 
               const SizedBox(height: 20),
@@ -113,19 +95,25 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        widget.onUpdate?.call(_collectUpdatedCar());
+                      onPressed: () async {
+                        final updated = _getUpdatedCar();
+                        await widget.onUpdate(updated, delete: false);
+                        if (widget.fullScreen) Navigator.pop(context);
                       },
                       child: const Text("Save"),
                     ),
                   ),
+
                   const SizedBox(width: 10),
+
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        widget.onUpdate?.call({"delete": widget.carData["id"]});
+                      onPressed: () async {
+                        final updated = _getUpdatedCar();
+                        await widget.onUpdate(updated, delete: true);
                         if (widget.fullScreen) Navigator.pop(context);
                       },
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                       child: const Text("Delete"),
                     ),
                   ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'Car.dart';
+import 'CarDAO.dart';
+import 'CarDatabase.dart';
 import 'car_detail_page.dart';
+import 'add_car_page.dart';
 
 class CarsMain extends StatefulWidget {
   const CarsMain({super.key});
@@ -13,70 +13,62 @@ class CarsMain extends StatefulWidget {
 }
 
 class _CarsMainState extends State<CarsMain> {
-  late Database _db;
-  final TextEditingController _controller = TextEditingController();
-  List<Map<String, dynamic>> _cars = [];
+  CarDatabase? _database;
+  CarDAO? _dao;
+  List<Car> _cars = [];
   int? _selectedIndex;
-
-
-
 
   @override
   void initState() {
     super.initState();
-    _initDb();
-    _loadLastTypedCar();
+    _initFloorDb();
   }
 
-  Future<void> _initDb() async {
-    // Initialize FFI for desktop
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
+  Future<void> _initFloorDb() async {
+    final db = await $FloorCarDatabase.databaseBuilder("cars.db").build();
+    _database = db;
+    _dao = db.carDao;
 
-    final path = join(await getDatabasesPath(), 'cars.db');
-    _db = await openDatabase(path, version: 1, onCreate: (db, version) async {
-      await db.execute('''
-      CREATE TABLE cars(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT
-      )
-    ''');
-    });
     _loadCars();
   }
 
-
   Future<void> _loadCars() async {
-    final cars = await _db.query('cars');
+    if (_dao == null) return;
+    final cars = await _dao!.getAllCars();
     setState(() => _cars = cars);
   }
 
-  Future<void> _addCar(String name) async {
-    if (name.isEmpty) return;
-
-    try {
-
-      await _db.insert('cars', {'name': name});
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('lastCar', name);
-      _controller.clear();
-      final cars = await _db.query('cars');
-      setState(() {
-        _cars = cars;
-      });
-      ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-        SnackBar(content: Text('Car added: $name')),
+  void _openDetail(Car car, bool isWide) {
+    if (!isWide) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CarDetailPage(
+            car: car,
+            onUpdate: _updateCarFromDetails,
+          ),
+        ),
       );
-    } catch (e) {
-      print('Error adding car: $e');
+    } else {
+      setState(() => _selectedIndex = _cars.indexOf(car));
     }
   }
 
+  Future<void> _updateCarFromDetails(Car updatedCar, {bool delete = false}) async {
+    if (delete) {
+      await _dao!.deleteCar(updatedCar);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Car deleted")),
+      );
+    } else {
+      await _dao!.updateCar(updatedCar);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Updated: ${updatedCar.name}")),
+      );
+    }
 
-  Future<void> _loadLastTypedCar() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastCar = prefs.getString('lastCar') ?? '';
-    _controller.text = lastCar;
+    _selectedIndex = null;
+    _loadCars();
   }
 
   @override
@@ -85,183 +77,75 @@ class _CarsMainState extends State<CarsMain> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cars'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('Instructions'),
-                  content: const Text('Type a car name and click Add.'),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('OK'))
-                  ],
-                ),
-              );
-            },
-          )
-        ],
+        title: const Text("Cars"),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                labelText: 'Car name',
-                border: OutlineInputBorder(),
+
+      // ADD CAR BUTTON
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AddCarPage(
+                onAdd: (Car newCar) async {
+                  await _dao!.insertCar(newCar);
+                  _loadCars();
+                },
               ),
             ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () async {
-                final name = _controller.text.trim();
-                if (name.isEmpty) return;
-                await _db.insert('cars', {'name': name});
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('lastCar', name);
-                _controller.clear();
+          );
+        },
+      ),
 
-                final cars = await _db.query('cars');
-                setState(() {
-                  _cars = cars;
-                });
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Car added: $name')),
-                );
-              },
-              child: const Text('Add Car'),
-
-
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: Row(
+      body: Row(
+        children: [
+          // LEFT PANEL: CAR LIST
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 children: [
                   Expanded(
-                    flex: 2,
                     child: ListView.builder(
                       itemCount: _cars.length,
                       itemBuilder: (context, index) {
                         final car = _cars[index];
                         return ListTile(
-                          title: Text(
-                            car['name'],
-                            style: Theme.of(context).textTheme.headlineMedium,
+                          title: Text(car.name),
+                          subtitle: Text(
+                            car.model.isEmpty ? "No model" : car.model,
+                            style: const TextStyle(fontSize: 13),
                           ),
-                          onTap: () {
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('You selected: ${car['name']}'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-
-
-                            if (isWide){
-                              setState(() {
-                                _selectedIndex = index;
-                              });
-                            } else{
-                              final carData = _cars[index];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => CarDetailPage(
-                                    carData: carData,
-                                    onUpdate: (updatedCar) async {
-                                      if (updatedCar.containsKey('delete')) {
-                                        await _db.delete(
-                                          'cars',
-                                          where: 'id = ?',
-                                          whereArgs: [updatedCar['delete']],
-                                        );
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Car deleted successfully')),
-                                        );
-                                      } else {
-                                        final dbCar = Map<String, Object?>.from(updatedCar);
-                                        await _db.update(
-                                          'cars',
-                                          dbCar,
-                                          where: 'id = ?',
-                                          whereArgs: [updatedCar['id']],
-                                        );
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Car updated: ${updatedCar['name']}')),
-                                        );
-
-                                      }
-
-                                      _loadCars();
-                                      setState(() => _selectedIndex = null);
-                                    },
-                                  ),
-                                ),
-                              );
-                            }
-                          },
+                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: () => _openDetail(car, isWide),
                         );
                       },
                     ),
                   ),
-                  if (isWide)
-                    Expanded(
-                      child: _selectedIndex != null
-                          ? CarDetailPage(
-                        carData: _cars[_selectedIndex!],
-                        fullScreen: false,
-                        onUpdate: (updatedCar) async {
-                          if (updatedCar.containsKey('delete')) {
-                            await _db.delete(
-                              'cars',
-                              where: 'id = ?',
-                              whereArgs: [updatedCar['delete']],
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Car deleted successfully')),
-                            );
-                          } else {
-                            final dbCar = Map<String, Object?>.from(updatedCar);
-                            await _db.update(
-                              'cars',
-                              dbCar,
-                              where: 'id = ?',
-                              whereArgs: [updatedCar['id']],
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Car updated: ${updatedCar['name']}')),
-                            );
-
-                          }
-
-                          _loadCars();
-                          setState(() => _selectedIndex = null);
-                        },
-                      )
-                          : Center(
-                        child: Text(
-                          'Select a car to see details',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ),
-
-
-
-                    ),
                 ],
               ),
-            )
-          ],
-        ),
+            ),
+          ),
+
+          // RIGHT PANEL: CAR DETAILS (WIDE SCREEN ONLY)
+          if (isWide)
+            Expanded(
+              child: _selectedIndex == null
+                  ? const Center(
+                child: Text(
+                  "Select a car",
+                  style: TextStyle(fontSize: 18),
+                ),
+              )
+                  : CarDetailPage(
+                car: _cars[_selectedIndex!],
+                fullScreen: false,
+                onUpdate: _updateCarFromDetails,
+              ),
+            ),
+        ],
       ),
     );
   }
