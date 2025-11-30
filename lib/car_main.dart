@@ -3,6 +3,8 @@ import 'Car.dart';
 import 'CarDAO.dart';
 import 'CarDatabase.dart';
 import 'car_detail_page.dart';
+import 'app_localizations.dart';
+import 'main.dart';
 
 class CarsMain extends StatefulWidget {
   const CarsMain({super.key});
@@ -57,12 +59,18 @@ class _CarsMainState extends State<CarsMain> {
   Future<void> _updateCarFromDetails(Car updatedCar, {bool delete = false}) async {
     if (delete) {
       await _dao!.deleteCar(updatedCar);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Car deleted")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.translate("car_deleted"))),
+      );
     } else {
       await _dao!.updateCar(updatedCar);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Updated: ${updatedCar.name}")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "${AppLocalizations.of(context)!.translate("updated")}: ${updatedCar.name}",
+          ),
+        ),
+      );
     }
 
     _selectedIndex = null;
@@ -75,7 +83,53 @@ class _CarsMainState extends State<CarsMain> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cars"),
+        title: Text(AppLocalizations.of(context)!.translate("cars")),
+
+        actions: [
+          // 📘 Instructions button
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: "Instructions",
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text("Instructions"),
+                  content: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("• Add a car using the text field at the top."),
+                      Text("• Tap a car to view or edit its details."),
+                      Text("• On wide screens, details appear beside the list."),
+                      Text("• Use Delete to remove a car."),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text("OK"),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          // 🌐 Language switch button
+          IconButton(
+            icon: const Icon(Icons.language),
+            tooltip: "Change Language",
+            onPressed: () {
+              final current = Localizations.localeOf(context).languageCode;
+              if (current == 'en') {
+                MyApp.setLocale(context, const Locale('fr'));
+              } else {
+                MyApp.setLocale(context, const Locale('en'));
+              }
+            },
+          ),
+        ],
       ),
 
       body: Row(
@@ -86,20 +140,20 @@ class _CarsMainState extends State<CarsMain> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-
-                  // 🔵 TOP BAR: ADD NEW CAR NAME
+                  // ADD CAR BAR
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _newCarName,
-                          decoration: const InputDecoration(
-                            labelText: "Add new car name",
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)!.translate("add_car_name"),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
                       const SizedBox(width: 10),
+
                       ElevatedButton(
                         onPressed: () async {
                           if (_newCarName.text.trim().isEmpty) return;
@@ -117,7 +171,7 @@ class _CarsMainState extends State<CarsMain> {
                           _newCarName.clear();
                           _loadCars();
                         },
-                        child: const Text("Add"),
+                        child: Text(AppLocalizations.of(context)!.translate("add")),
                       ),
                     ],
                   ),
@@ -133,7 +187,9 @@ class _CarsMainState extends State<CarsMain> {
                         return ListTile(
                           title: Text(car.name),
                           subtitle: Text(
-                            car.model.isEmpty ? "No model" : car.model,
+                            car.model.isEmpty
+                                ? AppLocalizations.of(context)!.translate("no_model")
+                                : car.model,
                             style: const TextStyle(fontSize: 13),
                           ),
                           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -150,8 +206,11 @@ class _CarsMainState extends State<CarsMain> {
           if (isWide)
             Expanded(
               child: _selectedIndex == null
-                  ? const Center(
-                child: Text("Select a car", style: TextStyle(fontSize: 18)),
+                  ? Center(
+                child: Text(
+                  AppLocalizations.of(context)!.translate("select_car"),
+                  style: const TextStyle(fontSize: 18),
+                ),
               )
                   : CarDetailPage(
                 car: _cars[_selectedIndex!],

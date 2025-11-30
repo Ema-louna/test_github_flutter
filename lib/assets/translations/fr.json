@@ -1,0 +1,15 @@
+{
+  "main_page_title": "Page Principale",
+  "cars": "Voitures",
+  "boats": "Bateaux",
+  "customers": "Clients",
+  "purchases": "Achats",
+  "add_car_name": "Ajouter une nouvelle voiture",
+  "select_car": "Sélectionnez une voiture",
+  "save": "Enregistrer",
+  "delete": "Supprimer",
+  "add": "Ajouter",
+  "no_model": "Aucun modèle",
+  "updated": "Mis à jour",
+  "car_deleted": "Voiture supprimée"
+}

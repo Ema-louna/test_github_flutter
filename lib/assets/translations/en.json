@@ -1,0 +1,15 @@
+{
+  "main_page_title": "Main Page",
+  "cars": "Cars",
+  "boats": "Boats",
+  "customers": "Customers",
+  "purchases": "Purchases",
+  "add_car_name": "Add new car name",
+  "select_car": "Select a car",
+  "save": "Save",
+  "delete": "Delete",
+  "add": "Add",
+  "no_model": "No model",
+  "updated": "Updated",
+  "car_deleted": "Car deleted"
+}
