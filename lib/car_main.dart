@@ -1,3 +1,19 @@
+/**
+ * -------------------------------------------------------------
+ *  CST2335 – Graphical Interface Programming
+ *  Final Project – Cars Module
+ *
+ *  Student: Emanuelle Marchant
+ *  Student ID: 041173314
+ *  Due Date: November 30, 2025
+ *
+ *  File: car_main.dart
+ *  Purpose: This file implements the Cars section of the
+ *           final project.
+ *  Each function below is documented using Dartdoc style.
+ * -------------------------------------------------------------
+ */
+
 import 'package:flutter/material.dart';
 import 'Car.dart';
 import 'CarDAO.dart';
@@ -6,6 +22,9 @@ import 'car_detail_page.dart';
 import 'app_localizations.dart';
 import 'main.dart';
 
+/// Main page for managing cars.
+/// Displays a ListView of cars, a text field to add new cars,
+/// and a details panel (or a separate page on smaller screens).
 class CarsMain extends StatefulWidget {
   const CarsMain({super.key});
 
@@ -14,11 +33,19 @@ class CarsMain extends StatefulWidget {
 }
 
 class _CarsMainState extends State<CarsMain> {
+  /// Reference to the Floor database.
   CarDatabase? _database;
+
+  /// Car Data Access Object.
   CarDAO? _dao;
+
+  /// List of all cars loaded from the database.
   List<Car> _cars = [];
+
+  /// Selected index for wide-screen layouts.
   int? _selectedIndex;
 
+  /// Controller for the "Add new car" text field.
   final TextEditingController _newCarName = TextEditingController();
 
   @override
@@ -27,7 +54,18 @@ class _CarsMainState extends State<CarsMain> {
     _initFloorDb();
   }
 
-  // Load highest ID from DB to avoid UNIQUE constraint crash
+  /// Initializes the Floor database and loads saved data.
+  Future<void> _initFloorDb() async {
+    final db = await $FloorCarDatabase.databaseBuilder("cars.db").build();
+    _database = db;
+    _dao = db.carDao;
+
+    await _initializeCarID();
+    _loadCars();
+  }
+
+  /// Ensures the next inserted car has a unique ID by reading the largest
+  /// existing ID in the database.
   Future<void> _initializeCarID() async {
     final cars = await _dao!.getAllCars();
     if (cars.isNotEmpty) {
@@ -38,21 +76,14 @@ class _CarsMainState extends State<CarsMain> {
     }
   }
 
-  Future<void> _initFloorDb() async {
-    final db = await $FloorCarDatabase.databaseBuilder("cars.db").build();
-    _database = db;
-    _dao = db.carDao;
-
-    await _initializeCarID();
-    _loadCars();
-  }
-
+  /// Reloads all cars from the database and updates the UI.
   Future<void> _loadCars() async {
     if (_dao == null) return;
     final cars = await _dao!.getAllCars();
     setState(() => _cars = cars);
   }
 
+  /// Opens the detail page or displays the right-side panel depending on screen width.
   void _openDetail(Car car, bool isWide) {
     if (!isWide) {
       Navigator.push(
@@ -69,6 +100,7 @@ class _CarsMainState extends State<CarsMain> {
     }
   }
 
+  /// Called when updating or deleting a car in the detail page.
   Future<void> _updateCarFromDetails(Car updatedCar, {bool delete = false}) async {
     if (delete) {
       await _dao!.deleteCar(updatedCar);
@@ -99,8 +131,9 @@ class _CarsMainState extends State<CarsMain> {
       appBar: AppBar(
         title: Text(tr("cars")),
 
+        /// Action buttons on the AppBar
         actions: [
-          // 📘 Instructions Button (full text in EN + FR)
+          /// Instructions Dialog (EN + FR paragraph block)
           IconButton(
             icon: const Icon(Icons.info_outline),
             tooltip: "Instructions",
@@ -112,26 +145,26 @@ class _CarsMainState extends State<CarsMain> {
                   content: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
                       children: const [
+                        /// English section
                         Text(
                           "ENGLISH:\n\n"
                               "• Use the text field at the top to add a new car to the list.\n"
-                              "• Tap a car to view its details and modify name, model, year, color, or description.\n"
-                              "• On larger screens (tablet/desktop), the details will appear on the right side.\n"
-                              "• Use the Delete button in the detail view to remove a car from the list.\n"
-                              "• Your data is saved in a local database and will reappear when reopening the app.",
-                          style: TextStyle(fontSize: 14),
+                              "• Tap a car to view its details and modify its information.\n"
+                              "• On larger screens, details appear on the right.\n"
+                              "• Press Delete in the detail page to remove a car.\n"
+                              "• All data is saved locally and restored automatically.",
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: 16),
+
+                        /// French section
                         Text(
                           "FRANÇAIS:\n\n"
-                              "• Utilisez le champ en haut pour ajouter une nouvelle voiture à la liste.\n"
-                              "• Appuyez sur une voiture pour voir ses détails et modifier le nom, le modèle, l'année, la couleur ou la description.\n"
-                              "• Sur les écrans plus larges (tablette/ordinateur), les détails apparaissent à droite.\n"
-                              "• Utilisez le bouton Supprimer dans la page des détails pour retirer une voiture.\n"
-                              "• Vos données sont sauvegardées dans une base locale et réapparaissent lorsque l'application est rouverte.",
-                          style: TextStyle(fontSize: 14),
+                              "• Utilisez le champ en haut pour ajouter une nouvelle voiture.\n"
+                              "• Appuyez sur une voiture pour voir et modifier ses détails.\n"
+                              "• Sur les grands écrans, les détails apparaissent à droite.\n"
+                              "• Appuyez sur Supprimer pour retirer une voiture.\n"
+                              "• Toutes les données sont sauvegardées localement.",
                         ),
                       ],
                     ),
@@ -147,7 +180,7 @@ class _CarsMainState extends State<CarsMain> {
             },
           ),
 
-          // 🌐 Language Switch Button
+          /// Manual language switch (English <-> French)
           IconButton(
             icon: const Icon(Icons.language),
             tooltip: "Change Language",
@@ -165,13 +198,14 @@ class _CarsMainState extends State<CarsMain> {
 
       body: Row(
         children: [
+          /// Left-side list + add bar
           Expanded(
             flex: 2,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // ADD CAR FIELD + BUTTON
+                  /// Add new car input row
                   Row(
                     children: [
                       Expanded(
@@ -184,7 +218,6 @@ class _CarsMainState extends State<CarsMain> {
                         ),
                       ),
                       const SizedBox(width: 10),
-
                       ElevatedButton(
                         onPressed: () async {
                           if (_newCarName.text.trim().isEmpty) return;
@@ -209,7 +242,7 @@ class _CarsMainState extends State<CarsMain> {
 
                   const SizedBox(height: 20),
 
-                  // LIST OF CARS
+                  /// Cars ListView
                   Expanded(
                     child: ListView.builder(
                       itemCount: _cars.length,
@@ -232,7 +265,7 @@ class _CarsMainState extends State<CarsMain> {
             ),
           ),
 
-          // RIGHT-SIDE PANEL
+          /// Right-side detail panel (tablets/desktops only)
           if (isWide)
             Expanded(
               child: _selectedIndex == null

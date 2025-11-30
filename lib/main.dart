@@ -10,9 +10,13 @@ void main() {
   runApp(const MyApp());
 }
 
+/// The root widget of the application.
+///
+/// Holds the active locale and allows switching the app language.
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+  /// Changes the application's locale from anywhere in the widget tree.
   static void setLocale(BuildContext context, Locale newLocale) {
     _MyAppState? state = context.findAncestorStateOfType<_MyAppState>();
     state?.changeLanguage(newLocale);
@@ -22,9 +26,12 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
+/// State class that stores and updates the app's current language.
 class _MyAppState extends State<MyApp> {
+  /// The active locale used by the application.
   Locale _locale = const Locale('en');
 
+  /// Updates the language of the app.
   void changeLanguage(Locale locale) {
     setState(() {
       _locale = locale;
@@ -43,6 +50,7 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
       ),
 
+      // Localization setup
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -60,6 +68,7 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
+/// Main landing page with navigation buttons for all project modules.
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key});
 
@@ -73,7 +82,7 @@ class MyHomePage extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
 
         actions: [
-          // ⭐ Instructions button
+          /// Shows an instructions dialog for the main page.
           IconButton(
             icon: const Icon(Icons.info_outline),
             tooltip: "Instructions",
@@ -103,7 +112,7 @@ class MyHomePage extends StatelessWidget {
             },
           ),
 
-          // 🌐 Language button
+          /// Toggles between English and French.
           IconButton(
             icon: const Icon(Icons.language),
             tooltip: "Change Language",
@@ -120,6 +129,7 @@ class MyHomePage extends StatelessWidget {
         ],
       ),
 
+      // Navigation buttons for all modules
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
