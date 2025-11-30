@@ -1,9 +1,24 @@
+/**
+ * CST2335 Final Project
+ * Student: Emanuelle Marchant (041173314)
+ * Date: Nov 30, 2025
+ *
+ * Detail page for viewing, editing, and deleting a selected Car.
+ * Supports both fullscreen (mobile) and side-panel (tablet/desktop) layouts.
+ */
+
 import 'package:flutter/material.dart';
 import 'Car.dart';
 
+/// Displays and edits the details of a single Car.
 class CarDetailPage extends StatefulWidget {
+  /// The car object to display and modify.
   final Car car;
+
+  /// Whether the page is fullscreen (mobile) or embedded (desktop/tablet).
   final bool fullScreen;
+
+  /// Callback to update or delete the car.
   final Future<void> Function(Car updatedCar, {bool delete}) onUpdate;
 
   const CarDetailPage({
@@ -28,6 +43,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
   void initState() {
     super.initState();
 
+    // Preload fields with existing values
     _name = TextEditingController(text: widget.car.name);
     _model = TextEditingController(text: widget.car.model);
     _year = TextEditingController(text: widget.car.year);
@@ -35,6 +51,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
     _description = TextEditingController(text: widget.car.description);
   }
 
+  /// Returns a new Car object containing the updated text field values.
   Car _getUpdatedCar() {
     return Car(
       widget.car.id,
@@ -61,32 +78,37 @@ class _CarDetailPageState extends State<CarDetailPage> {
             children: [
               TextField(
                 controller: _name,
-                decoration: const InputDecoration(labelText: "Name", border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: "Name", border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
 
               TextField(
                 controller: _model,
-                decoration: const InputDecoration(labelText: "Model", border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: "Model", border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
 
               TextField(
                 controller: _year,
-                decoration: const InputDecoration(labelText: "Year", border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: "Year", border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
 
               TextField(
                 controller: _color,
-                decoration: const InputDecoration(labelText: "Color", border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: "Color", border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
 
               TextField(
                 controller: _description,
                 maxLines: 5,
-                decoration: const InputDecoration(labelText: "Description", border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: "Description", border: OutlineInputBorder()),
               ),
 
               const SizedBox(height: 20),
@@ -113,7 +135,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
                         await widget.onUpdate(updated, delete: true);
                         if (widget.fullScreen) Navigator.pop(context);
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
                       child: const Text("Delete"),
                     ),
                   ),
