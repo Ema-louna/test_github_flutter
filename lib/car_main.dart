@@ -3,7 +3,6 @@ import 'Car.dart';
 import 'CarDAO.dart';
 import 'CarDatabase.dart';
 import 'car_detail_page.dart';
-import 'add_car_page.dart';
 
 class CarsMain extends StatefulWidget {
   const CarsMain({super.key});
@@ -18,6 +17,8 @@ class _CarsMainState extends State<CarsMain> {
   List<Car> _cars = [];
   int? _selectedIndex;
 
+  final TextEditingController _newCarName = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -28,7 +29,6 @@ class _CarsMainState extends State<CarsMain> {
     final db = await $FloorCarDatabase.databaseBuilder("cars.db").build();
     _database = db;
     _dao = db.carDao;
-
     _loadCars();
   }
 
@@ -57,14 +57,12 @@ class _CarsMainState extends State<CarsMain> {
   Future<void> _updateCarFromDetails(Car updatedCar, {bool delete = false}) async {
     if (delete) {
       await _dao!.deleteCar(updatedCar);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Car deleted")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Car deleted")));
     } else {
       await _dao!.updateCar(updatedCar);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Updated: ${updatedCar.name}")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Updated: ${updatedCar.name}")));
     }
 
     _selectedIndex = null;
@@ -80,33 +78,53 @@ class _CarsMainState extends State<CarsMain> {
         title: const Text("Cars"),
       ),
 
-      // ADD CAR BUTTON
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddCarPage(
-                onAdd: (Car newCar) async {
-                  await _dao!.insertCar(newCar);
-                  _loadCars();
-                },
-              ),
-            ),
-          );
-        },
-      ),
-
       body: Row(
         children: [
-          // LEFT PANEL: CAR LIST
           Expanded(
             flex: 2,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+
+                  // 🔵 TOP BAR: ADD NEW CAR NAME
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _newCarName,
+                          decoration: const InputDecoration(
+                            labelText: "Add new car name",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_newCarName.text.trim().isEmpty) return;
+
+                          final newCar = Car(
+                            Car.ID++,
+                            _newCarName.text.trim(),
+                            "",
+                            "",
+                            "",
+                            "",
+                          );
+
+                          await _dao!.insertCar(newCar);
+                          _newCarName.clear();
+                          _loadCars();
+                        },
+                        child: const Text("Add"),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // LIST OF CARS
                   Expanded(
                     child: ListView.builder(
                       itemCount: _cars.length,
@@ -129,15 +147,11 @@ class _CarsMainState extends State<CarsMain> {
             ),
           ),
 
-          // RIGHT PANEL: CAR DETAILS (WIDE SCREEN ONLY)
           if (isWide)
             Expanded(
               child: _selectedIndex == null
                   ? const Center(
-                child: Text(
-                  "Select a car",
-                  style: TextStyle(fontSize: 18),
-                ),
+                child: Text("Select a car", style: TextStyle(fontSize: 18)),
               )
                   : CarDetailPage(
                 car: _cars[_selectedIndex!],
