@@ -1,0 +1,22 @@
+{
+  "main_page_title": "Main Page",
+  "cars": "Cars",
+  "boats": "Boats",
+  "customers": "Customers",
+  "purchases": "Purchases",
+
+  "add_car_name": "Add new car name",
+  "select_car": "Select a car",
+  "save": "Save",
+  "delete": "Delete",
+  "add": "Add",
+  "no_model": "No model",
+  "updated": "Updated",
+  "car_deleted": "Car deleted",
+
+  "instructions_title": "Instructions",
+  "i_add": "Add a car using the text field at the top.",
+  "i_tap": "Tap a car to view or edit its details.",
+  "i_wide": "On large screens, details appear beside the list.",
+  "i_delete": "Use the Delete button to remove a car."
+}

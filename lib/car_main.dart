@@ -3,7 +3,8 @@ import 'Car.dart';
 import 'CarDAO.dart';
 import 'CarDatabase.dart';
 import 'car_detail_page.dart';
-import 'add_car_page.dart';
+import 'app_localizations.dart';
+import 'main.dart';
 
 class CarsMain extends StatefulWidget {
   const CarsMain({super.key});
@@ -18,10 +19,23 @@ class _CarsMainState extends State<CarsMain> {
   List<Car> _cars = [];
   int? _selectedIndex;
 
+  final TextEditingController _newCarName = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _initFloorDb();
+  }
+
+  // Load highest ID from DB to avoid UNIQUE constraint crash
+  Future<void> _initializeCarID() async {
+    final cars = await _dao!.getAllCars();
+    if (cars.isNotEmpty) {
+      int maxId = cars.map((c) => c.id).reduce((a, b) => a > b ? a : b);
+      Car.ID = maxId + 1;
+    } else {
+      Car.ID = 1;
+    }
   }
 
   Future<void> _initFloorDb() async {
@@ -29,6 +43,7 @@ class _CarsMainState extends State<CarsMain> {
     _database = db;
     _dao = db.carDao;
 
+    await _initializeCarID();
     _loadCars();
   }
 
@@ -58,12 +73,16 @@ class _CarsMainState extends State<CarsMain> {
     if (delete) {
       await _dao!.deleteCar(updatedCar);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Car deleted")),
+        SnackBar(content: Text(AppLocalizations.of(context)!.translate("car_deleted") ?? "Deleted")),
       );
     } else {
       await _dao!.updateCar(updatedCar);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Updated: ${updatedCar.name}")),
+        SnackBar(
+          content: Text(
+            "${AppLocalizations.of(context)!.translate("updated")}: ${updatedCar.name}",
+          ),
+        ),
       );
     }
 
@@ -73,40 +92,124 @@ class _CarsMainState extends State<CarsMain> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.of(context)!.translate;
     final isWide = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cars"),
-      ),
+        title: Text(tr("cars")),
 
-      // ADD CAR BUTTON
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddCarPage(
-                onAdd: (Car newCar) async {
-                  await _dao!.insertCar(newCar);
-                  _loadCars();
-                },
-              ),
-            ),
-          );
-        },
+        actions: [
+          // 📘 Instructions Button (full text in EN + FR)
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: "Instructions",
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text("Instructions / Instructions"),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text(
+                          "ENGLISH:\n\n"
+                              "• Use the text field at the top to add a new car to the list.\n"
+                              "• Tap a car to view its details and modify name, model, year, color, or description.\n"
+                              "• On larger screens (tablet/desktop), the details will appear on the right side.\n"
+                              "• Use the Delete button in the detail view to remove a car from the list.\n"
+                              "• Your data is saved in a local database and will reappear when reopening the app.",
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        SizedBox(height: 20),
+                        Text(
+                          "FRANÇAIS:\n\n"
+                              "• Utilisez le champ en haut pour ajouter une nouvelle voiture à la liste.\n"
+                              "• Appuyez sur une voiture pour voir ses détails et modifier le nom, le modèle, l'année, la couleur ou la description.\n"
+                              "• Sur les écrans plus larges (tablette/ordinateur), les détails apparaissent à droite.\n"
+                              "• Utilisez le bouton Supprimer dans la page des détails pour retirer une voiture.\n"
+                              "• Vos données sont sauvegardées dans une base locale et réapparaissent lorsque l'application est rouverte.",
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text("OK"),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          // 🌐 Language Switch Button
+          IconButton(
+            icon: const Icon(Icons.language),
+            tooltip: "Change Language",
+            onPressed: () {
+              final current = Localizations.localeOf(context).languageCode;
+              if (current == 'en') {
+                MyApp.setLocale(context, const Locale('fr'));
+              } else {
+                MyApp.setLocale(context, const Locale('en'));
+              }
+            },
+          ),
+        ],
       ),
 
       body: Row(
         children: [
-          // LEFT PANEL: CAR LIST
           Expanded(
             flex: 2,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  // ADD CAR FIELD + BUTTON
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _newCarName,
+                          decoration: InputDecoration(
+                            labelText: tr("add_car_name"),
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_newCarName.text.trim().isEmpty) return;
+
+                          final newCar = Car(
+                            Car.ID++,
+                            _newCarName.text.trim(),
+                            "",
+                            "",
+                            "",
+                            "",
+                          );
+
+                          await _dao!.insertCar(newCar);
+                          _newCarName.clear();
+                          _loadCars();
+                        },
+                        child: Text(tr("add")),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // LIST OF CARS
                   Expanded(
                     child: ListView.builder(
                       itemCount: _cars.length,
@@ -115,7 +218,7 @@ class _CarsMainState extends State<CarsMain> {
                         return ListTile(
                           title: Text(car.name),
                           subtitle: Text(
-                            car.model.isEmpty ? "No model" : car.model,
+                            car.model.isEmpty ? tr("no_model") : car.model,
                             style: const TextStyle(fontSize: 13),
                           ),
                           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -129,14 +232,14 @@ class _CarsMainState extends State<CarsMain> {
             ),
           ),
 
-          // RIGHT PANEL: CAR DETAILS (WIDE SCREEN ONLY)
+          // RIGHT-SIDE PANEL
           if (isWide)
             Expanded(
               child: _selectedIndex == null
-                  ? const Center(
+                  ? Center(
                 child: Text(
-                  "Select a car",
-                  style: TextStyle(fontSize: 18),
+                  tr("select_car"),
+                  style: const TextStyle(fontSize: 18),
                 ),
               )
                   : CarDetailPage(
