@@ -4,6 +4,7 @@
   "boats": "Bateaux",
   "customers": "Clients",
   "purchases": "Achats",
+
   "add_car_name": "Ajouter une nouvelle voiture",
   "select_car": "Sélectionnez une voiture",
   "save": "Enregistrer",
@@ -11,5 +12,11 @@
   "add": "Ajouter",
   "no_model": "Aucun modèle",
   "updated": "Mis à jour",
-  "car_deleted": "Voiture supprimée"
+  "car_deleted": "Voiture supprimée",
+
+  "instructions_title": "Instructions",
+  "i_add": "Ajoutez une voiture avec le champ de texte en haut.",
+  "i_tap": "Appuyez sur une voiture pour voir ou modifier ses détails.",
+  "i_wide": "Sur un grand écran, les détails apparaissent à côté de la liste.",
+  "i_delete": "Utilisez le bouton Supprimer pour enlever une voiture."
 }

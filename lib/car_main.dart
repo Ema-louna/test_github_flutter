@@ -27,10 +27,23 @@ class _CarsMainState extends State<CarsMain> {
     _initFloorDb();
   }
 
+  // Load highest ID from DB to avoid UNIQUE constraint crash
+  Future<void> _initializeCarID() async {
+    final cars = await _dao!.getAllCars();
+    if (cars.isNotEmpty) {
+      int maxId = cars.map((c) => c.id).reduce((a, b) => a > b ? a : b);
+      Car.ID = maxId + 1;
+    } else {
+      Car.ID = 1;
+    }
+  }
+
   Future<void> _initFloorDb() async {
     final db = await $FloorCarDatabase.databaseBuilder("cars.db").build();
     _database = db;
     _dao = db.carDao;
+
+    await _initializeCarID();
     _loadCars();
   }
 
@@ -60,7 +73,7 @@ class _CarsMainState extends State<CarsMain> {
     if (delete) {
       await _dao!.deleteCar(updatedCar);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.translate("car_deleted"))),
+        SnackBar(content: Text(AppLocalizations.of(context)!.translate("car_deleted") ?? "Deleted")),
       );
     } else {
       await _dao!.updateCar(updatedCar);
@@ -79,14 +92,15 @@ class _CarsMainState extends State<CarsMain> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.of(context)!.translate;
     final isWide = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.translate("cars")),
+        title: Text(tr("cars")),
 
         actions: [
-          // 📘 Instructions button
+          // 📘 Instructions Button (full text in EN + FR)
           IconButton(
             icon: const Icon(Icons.info_outline),
             tooltip: "Instructions",
@@ -94,16 +108,33 @@ class _CarsMainState extends State<CarsMain> {
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text("Instructions"),
-                  content: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("• Add a car using the text field at the top."),
-                      Text("• Tap a car to view or edit its details."),
-                      Text("• On wide screens, details appear beside the list."),
-                      Text("• Use Delete to remove a car."),
-                    ],
+                  title: const Text("Instructions / Instructions"),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text(
+                          "ENGLISH:\n\n"
+                              "• Use the text field at the top to add a new car to the list.\n"
+                              "• Tap a car to view its details and modify name, model, year, color, or description.\n"
+                              "• On larger screens (tablet/desktop), the details will appear on the right side.\n"
+                              "• Use the Delete button in the detail view to remove a car from the list.\n"
+                              "• Your data is saved in a local database and will reappear when reopening the app.",
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        SizedBox(height: 20),
+                        Text(
+                          "FRANÇAIS:\n\n"
+                              "• Utilisez le champ en haut pour ajouter une nouvelle voiture à la liste.\n"
+                              "• Appuyez sur une voiture pour voir ses détails et modifier le nom, le modèle, l'année, la couleur ou la description.\n"
+                              "• Sur les écrans plus larges (tablette/ordinateur), les détails apparaissent à droite.\n"
+                              "• Utilisez le bouton Supprimer dans la page des détails pour retirer une voiture.\n"
+                              "• Vos données sont sauvegardées dans une base locale et réapparaissent lorsque l'application est rouverte.",
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
                   ),
                   actions: [
                     TextButton(
@@ -116,7 +147,7 @@ class _CarsMainState extends State<CarsMain> {
             },
           ),
 
-          // 🌐 Language switch button
+          // 🌐 Language Switch Button
           IconButton(
             icon: const Icon(Icons.language),
             tooltip: "Change Language",
@@ -140,14 +171,14 @@ class _CarsMainState extends State<CarsMain> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // ADD CAR BAR
+                  // ADD CAR FIELD + BUTTON
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _newCarName,
                           decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.translate("add_car_name"),
+                            labelText: tr("add_car_name"),
                             border: const OutlineInputBorder(),
                           ),
                         ),
@@ -171,7 +202,7 @@ class _CarsMainState extends State<CarsMain> {
                           _newCarName.clear();
                           _loadCars();
                         },
-                        child: Text(AppLocalizations.of(context)!.translate("add")),
+                        child: Text(tr("add")),
                       ),
                     ],
                   ),
@@ -187,9 +218,7 @@ class _CarsMainState extends State<CarsMain> {
                         return ListTile(
                           title: Text(car.name),
                           subtitle: Text(
-                            car.model.isEmpty
-                                ? AppLocalizations.of(context)!.translate("no_model")
-                                : car.model,
+                            car.model.isEmpty ? tr("no_model") : car.model,
                             style: const TextStyle(fontSize: 13),
                           ),
                           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -203,12 +232,13 @@ class _CarsMainState extends State<CarsMain> {
             ),
           ),
 
+          // RIGHT-SIDE PANEL
           if (isWide)
             Expanded(
               child: _selectedIndex == null
                   ? Center(
                 child: Text(
-                  AppLocalizations.of(context)!.translate("select_car"),
+                  tr("select_car"),
                   style: const TextStyle(fontSize: 18),
                 ),
               )

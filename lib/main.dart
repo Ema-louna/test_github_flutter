@@ -3,7 +3,7 @@ import 'car_main.dart';
 import 'customer_main.dart';
 import 'boat_main.dart';
 
-import 'app_localizations.dart';                     // ← REQUIRED
+import 'app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
@@ -13,7 +13,6 @@ void main() {
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // Allows any page to change the app language
   static void setLocale(BuildContext context, Locale newLocale) {
     _MyAppState? state = context.findAncestorStateOfType<_MyAppState>();
     state?.changeLanguage(newLocale);
@@ -24,7 +23,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  Locale _locale = const Locale('en'); // Default English
+  Locale _locale = const Locale('en');
 
   void changeLanguage(Locale locale) {
     setState(() {
@@ -35,7 +34,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      locale: _locale,                                       // ← important
+      locale: _locale,
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
 
@@ -44,9 +43,8 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
       ),
 
-      // ⭐ Localization setup
       localizationsDelegates: const [
-        AppLocalizations.delegate,                           // ← YOUR delegate
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -57,38 +55,68 @@ class _MyAppState extends State<MyApp> {
         Locale('fr'),
       ],
 
-      home: const MyHomePage(title: 'Main Page'),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
+  const MyHomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final tr = AppLocalizations.of(context)!.translate;
 
-      // ⭐ AppBar with language-switch button
+    return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(tr("main_page_title")),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+
         actions: [
+          // ⭐ Instructions button
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: "Instructions",
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(tr("instructions") ?? "Instructions"),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("• ${tr("i_add") ?? "Add a car from the main menu"}"),
+                      Text("• ${tr("i_tap") ?? "Tap a car to edit or delete it"}"),
+                      Text("• ${tr("i_wide") ?? "Wide screens show split view"}"),
+                      Text("• ${tr("i_delete") ?? "You can delete an item anytime"}"),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text("OK"),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          // 🌐 Language button
           IconButton(
             icon: const Icon(Icons.language),
             tooltip: "Change Language",
             onPressed: () {
               final current = Localizations.localeOf(context).languageCode;
 
-              // Toggle EN ↔ FR
               if (current == 'en') {
                 MyApp.setLocale(context, const Locale('fr'));
               } else {
                 MyApp.setLocale(context, const Locale('en'));
               }
             },
-          )
+          ),
         ],
       ),
 
@@ -96,7 +124,6 @@ class MyHomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -104,9 +131,8 @@ class MyHomePage extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const CarsMain()),
                 );
               },
-              child: const Text('Cars'),   // Will translate later
+              child: Text(tr("cars")),
             ),
-
             const SizedBox(height: 10),
 
             ElevatedButton(
@@ -116,26 +142,24 @@ class MyHomePage extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const BoatMain()),
                 );
               },
-              child: const Text('Boat'),
+              child: Text(tr("boats")),
             ),
-
             const SizedBox(height: 10),
 
             ElevatedButton(
               onPressed: () {},
-              child: const Text('Purchase'),
+              child: Text(tr("purchases")),
             ),
-
             const SizedBox(height: 10),
 
             ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CustomerMain()),
-                  );
-                },
-                child: const Text('Customer')
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CustomerMain()),
+                );
+              },
+              child: Text(tr("customers")),
             ),
           ],
         ),
