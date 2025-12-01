@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
+import 'Purchase.dart';
+import 'PurchaseDao.dart';
+import 'PurchaseDatabase.dart';
+import 'PurchaseOfferForm.dart';
 
-/// Model for a purchase item
-class PurchaseItem {
-  final int id;
-  final String name;
 
-  PurchaseItem(this.id, this.name);
-}
 
-/// Purchase Section main page
 class PurchaseOfferMain extends StatefulWidget {
   const PurchaseOfferMain({super.key});
 
@@ -17,84 +15,116 @@ class PurchaseOfferMain extends StatefulWidget {
 }
 
 class _PurchaseOfferMainState extends State<PurchaseOfferMain> {
-  /// Controller for new item input
-  final TextEditingController _itemController = TextEditingController();
+  late PurchaseDao dao;
+  List<Purchase> _offers = [];
 
-  /// List of all items inserted by the user
-  final List<PurchaseItem> _items = [];
+  final EncryptedSharedPreferences _prefs = EncryptedSharedPreferences();
 
-  /// Auto-increment ID for items
-  int _nextId = 1;
+  String? lastTypedCustomerId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initDb();
+    _loadCustomerId();
+  }
+
+  Future<void> _initDb() async {
+    final database =
+    await $FloorAppDatabase.databaseBuilder("purchases.db").build();
+
+    dao = database.purchaseDao;
+
+    _loadOffers();
+  }
+
+  Future<void> _loadOffers() async {
+    final items = await dao.findAllPurchase();
+    setState(() {
+      _offers = items;
+    });
+  }
+
+  Future<void> _loadCustomerId() async {
+    lastTypedCustomerId =
+        await _prefs.getString("last_customer_id") ?? "";
+  }
+
+  /// Called after an offer is added, updated, or deleted
+  void refreshList() => _loadOffers();
+
+  bool get isTabletOrDesktop =>
+      MediaQuery.of(context).size.width >= 700;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Purchases"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Input + Add button
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _itemController,
-                    decoration: const InputDecoration(
-                      labelText: 'Enter item name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: _addItem,
-                  child: const Text('Add'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // ListView showing inserted items
-            Expanded(
-              child: _items.isEmpty
-                  ? const Center(
-                child: Text(
-                  'No items yet',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-              )
-                  : ListView.builder(
-                itemCount: _items.length,
-                itemBuilder: (context, index) {
-                  final item = _items[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(item.name),
-                      onTap: () {
-                        // Details view to be implemented later
-                      },
-                    ),
-                  );
-                },
+      appBar: AppBar(title: const Text("Purchase Offers")),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PurchaseOfferForm(
+                dao: dao,
+                onSaved: refreshList,
               ),
             ),
-          ],
-        ),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
+      body: isTabletOrDesktop
+          ? Row(
+        children: [
+          Expanded(child: _buildList()),
+          const VerticalDivider(width: 1),
+          Expanded(
+            child: Center(
+              child: Text(
+                "Select an offer to view details",
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+            ),
+          )
+        ],
+      )
+          : _buildList(),
     );
   }
 
-  /// Adds a new item to the list
-  void _addItem() {
-    final name = _itemController.text.trim();
-    if (name.isEmpty) return;
+  Widget _buildList() {
+    if (_offers.isEmpty) {
+      return const Center(
+        child: Text("No purchase offers yet."),
+      );
+    }
 
-    setState(() {
-      _items.add(PurchaseItem(_nextId++, name));
-      _itemController.clear();
-    });
+    return ListView.builder(
+      itemCount: _offers.length,
+      itemBuilder: (context, index) {
+        final offer = _offers[index];
+
+        return Card(
+          child: ListTile(
+            title: Text("Customer: ${offer.customerID}"),
+            subtitle: Text("Vehicle: ${offer.vehicleId} — \$${offer.price}"),
+            trailing: Text(offer.status),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PurchaseOfferForm(
+                    dao: dao,
+                    offer: offer,
+                    onSaved: refreshList,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 }
