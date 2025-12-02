@@ -1,38 +1,34 @@
 import 'package:floor/floor.dart';
+import 'dart:convert';
+
 /// Purchase entity class for database storage
-///
-/// Represents a purchase  information including
-/// customerId, vehicleId (boat or car), price, dateofOffer, status(accepted or
-/// rejected).
+/// Represents a purchase including customerId, vehicleId, price, dateOfOffer, status (accepted/rejected).
 @entity
 class Purchase {
   /// Unique identifier for the purchase
   @primaryKey
   final int? id;
 
-  /// CustomerId for purchase
+  /// Customer ID for purchase
   final String customerID;
-  /// vehicle's ID
+
+  /// Vehicle's ID
   final String vehicleId;
+
   /// Price of purchase
   final String price;
-  /// Purchase's date of offer  in YYYY-MM-DD format
+
+  /// Date of offer in YYYY-MM-DD format
   final String dateOfOffer;
-  /// Purchase's status
+
+  /// Status of purchase
   final String status;
 
   /// Static counter for generating unique IDs
   static int ID = 1;
 
-  /// Creates a new Package instance
-  ///
-  /// [id] Unique identifier (auto-generated if null)
-  /// [customerID] Customer's id for purchase
-  /// [vehicleId] vehicle's id for purchase
-  /// [price] Purchase's price
-  /// [dateOfOffer] Date of offer
-  /// [status] status of purchase
-    Purchase(
+  /// Constructor
+  Purchase(
       this.id,
       this.customerID,
       this.vehicleId,
@@ -45,4 +41,31 @@ class Purchase {
       ID = id! + 1;
     }
   }
+
+  /// Convert Purchase object to JSON Map
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'customerID': customerID,
+    'vehicleId': vehicleId,
+    'price': price,
+    'dateOfOffer': dateOfOffer,
+    'status': status,
+  };
+
+  /// Create Purchase object from JSON Map
+  factory Purchase.fromJson(Map<String, dynamic> json) => Purchase(
+    json['id'],
+    json['customerID'],
+    json['vehicleId'],
+    json['price'],
+    json['dateOfOffer'],
+    json['status'],
+  );
+
+  /// Optional: Encode Purchase to JSON string
+  String toJsonString() => jsonEncode(toJson());
+
+  /// Optional: Decode JSON string to Purchase
+  factory Purchase.fromJsonString(String jsonString) =>
+      Purchase.fromJson(jsonDecode(jsonString));
 }

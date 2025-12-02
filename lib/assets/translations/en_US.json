@@ -1,0 +1,11 @@
+{
+  "title": "Purchase Offers",
+  "no_offers": "No purchase offers yet.",
+  "select_offer": "Select an offer to view details",
+  "customer": "Customer",
+  "vehicle": "Vehicle",
+  "price": "Price",
+  "instructions_title": "How to Use This Page",
+  "instructions_body": "• Tap + to add a new purchase offer.\n• Tap an offer to edit it.\n• Scroll to view all offers.\n• Desktop/Tablet shows two panels.",
+  "ok": "OK"
+}
