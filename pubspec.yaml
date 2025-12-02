@@ -23,6 +23,7 @@ dependencies:
   floor_annotation: ^1.5.0
   path: ^1.9.1
   encrypted_shared_preferences: ^3.0.1
+  dartdoc: ^8.0.7
 
 
 

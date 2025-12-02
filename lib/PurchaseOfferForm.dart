@@ -1,18 +1,22 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'Purchase.dart';
 import 'PurchaseDao.dart';
 
+/// Form to add or edit a purchase offer
 class PurchaseOfferForm extends StatefulWidget {
   final PurchaseDao dao;
-  final Purchase? offer; // null = create new
   final VoidCallback onSaved;
+  final Purchase? offer;
+  final Purchase? initialData;
 
   const PurchaseOfferForm({
     super.key,
     required this.dao,
     required this.onSaved,
     this.offer,
+    this.initialData,
   });
 
   @override
@@ -21,38 +25,30 @@ class PurchaseOfferForm extends StatefulWidget {
 
 class _PurchaseOfferFormState extends State<PurchaseOfferForm> {
   final _formKey = GlobalKey<FormState>();
-
   final _customerIDController = TextEditingController();
   final _vehicleIDController = TextEditingController();
   final _priceController = TextEditingController();
   final _dateController = TextEditingController();
   String _status = "accepted";
 
-  final EncryptedSharedPreferences _prefs = EncryptedSharedPreferences();
-
   bool get isEditing => widget.offer != null;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedCustomerId();
-    if (isEditing) _loadOfferForEdit();
-  }
-
-  Future<void> _loadSavedCustomerId() async {
-    String lastId = await _prefs.getString("last_customer_id") ?? "";
-    if (!isEditing) {
-      _customerIDController.text = lastId;
+    if (isEditing) {
+      _loadPurchase(widget.offer!);
+    } else if (widget.initialData != null) {
+      _loadPurchase(widget.initialData!);
     }
   }
 
-  void _loadOfferForEdit() {
-    final o = widget.offer!;
-    _customerIDController.text = o.customerID;
-    _vehicleIDController.text = o.vehicleId;
-    _priceController.text = o.price;
-    _dateController.text = o.dateOfOffer;
-    _status = o.status;
+  void _loadPurchase(Purchase p) {
+    _customerIDController.text = p.customerID;
+    _vehicleIDController.text = p.vehicleId;
+    _priceController.text = p.price;
+    _dateController.text = p.dateOfOffer;
+    _status = p.status;
   }
 
   @override
@@ -64,12 +60,9 @@ class _PurchaseOfferFormState extends State<PurchaseOfferForm> {
     super.dispose();
   }
 
-  /// VALIDATE & SAVE
+  /// Save or update the purchase offer
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-
-    // Save customer ID for next time
-    await _prefs.setString("last_customer_id", _customerIDController.text);
 
     final purchase = Purchase(
       isEditing ? widget.offer!.id : Purchase.ID++,
@@ -82,24 +75,32 @@ class _PurchaseOfferFormState extends State<PurchaseOfferForm> {
 
     if (isEditing) {
       await widget.dao.updatePurchase(purchase);
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Offer updated successfully")),
-      );
+          const SnackBar(content: Text("Offer updated successfully")));
     } else {
       await widget.dao.insertPurchase(purchase);
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Offer added successfully")),
-      );
+          const SnackBar(content: Text("Offer added successfully")));
     }
+
+    // Save to EncryptedSharedPreferences for future copy
+    final prefs = EncryptedSharedPreferences();
+    await prefs.setString("last_purchase", jsonEncode({
+      "id": purchase.id,
+      "customerID": purchase.customerID,
+      "vehicleId": purchase.vehicleId,
+      "price": purchase.price,
+      "dateOfOffer": purchase.dateOfOffer,
+      "status": purchase.status,
+    }));
 
     widget.onSaved();
     Navigator.pop(context);
   }
 
-  /// DELETE WITH CONFIRMATION
   void _confirmDelete() {
+    if (!isEditing) return;
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -112,14 +113,11 @@ class _PurchaseOfferFormState extends State<PurchaseOfferForm> {
           TextButton(
             onPressed: () async {
               await widget.dao.deletePurchase(widget.offer!);
-
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Offer deleted")),
-              );
-
+                  const SnackBar(content: Text("Offer deleted")));
               widget.onSaved();
-              Navigator.pop(context); // close dialog
-              Navigator.pop(context); // close form page
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
             child: const Text("Delete"),
           ),
@@ -132,9 +130,8 @@ class _PurchaseOfferFormState extends State<PurchaseOfferForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-        Text(isEditing ? "Edit Purchase Offer" : "Add Purchase Offer"),
-      ),
+          title:
+          Text(isEditing ? "Edit Purchase Offer" : "Add Purchase Offer")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -143,27 +140,17 @@ class _PurchaseOfferFormState extends State<PurchaseOfferForm> {
             children: [
               _input("Customer ID", _customerIDController),
               const SizedBox(height: 10),
-
               _input("Vehicle / Boat / Car ID", _vehicleIDController),
               const SizedBox(height: 10),
-
               _input("Price", _priceController, keyboard: TextInputType.number),
               const SizedBox(height: 10),
-
               _input("Date (YYYY-MM-DD)", _dateController),
               const SizedBox(height: 20),
-
               DropdownButtonFormField<String>(
                 value: _status,
                 items: const [
-                  DropdownMenuItem(
-                    value: "accepted",
-                    child: Text("Accepted"),
-                  ),
-                  DropdownMenuItem(
-                    value: "rejected",
-                    child: Text("Rejected"),
-                  ),
+                  DropdownMenuItem(value: "accepted", child: Text("Accepted")),
+                  DropdownMenuItem(value: "rejected", child: Text("Rejected")),
                 ],
                 onChanged: (v) => setState(() => _status = v!),
                 decoration: const InputDecoration(
@@ -171,10 +158,7 @@ class _PurchaseOfferFormState extends State<PurchaseOfferForm> {
                   border: OutlineInputBorder(),
                 ),
               ),
-
               const SizedBox(height: 30),
-
-              // Submit / Update / Delete buttons
               if (!isEditing)
                 ElevatedButton(
                   onPressed: _save,
@@ -188,8 +172,7 @@ class _PurchaseOfferFormState extends State<PurchaseOfferForm> {
                 const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: _confirmDelete,
-                  style:
-                  ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   child: const Text("Delete Offer"),
                 ),
               ]
@@ -200,18 +183,16 @@ class _PurchaseOfferFormState extends State<PurchaseOfferForm> {
     );
   }
 
-  /// Helper input field builder
   Widget _input(String label, TextEditingController controller,
-      {TextInputType keyboard = TextInputType.text}) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboard,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-      validator: (v) =>
-      v == null || v.trim().isEmpty ? "Required field" : null,
-    );
-  }
+      {TextInputType keyboard = TextInputType.text}) =>
+      TextFormField(
+        controller: controller,
+        keyboardType: keyboard,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        validator: (v) =>
+        v == null || v.trim().isEmpty ? "Required field" : null,
+      );
 }
